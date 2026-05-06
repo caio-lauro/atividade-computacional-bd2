@@ -1,6 +1,3 @@
-CREATE DATABASE IF NOT EXISTS atividade_computacional_db;
-USE atividade_computacional_db;
-
 -- ===========================
 -- Tabelas de Entidades Fortes
 -- ===========================
