@@ -11,7 +11,14 @@ def init_db():
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
     )
+
     cursor = conn.cursor()
+
+    # Criar database caso não exista e usá-lo
+    cursor.execute(f'CREATE DATABASE IF NOT EXISTS {settings.DATABASE}')
+    cursor.execute(f'USE {settings.DATABASE}')
+
+    # Executar instruções de init.sql
     with open(file='db/init.sql', mode='r', encoding='utf-8') as fp:
         for stmt in fp.read().split(';'):
             if stmt.strip():
