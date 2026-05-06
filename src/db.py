@@ -24,8 +24,11 @@ def init_db():
     cursor.execute(f'CREATE DATABASE IF NOT EXISTS {settings.DATABASE}')
     cursor.execute(f'USE {settings.DATABASE}')
 
-    # Executar instruções de init.sql
+    # Inicializar banco de dados criando as tabelas
     run_sql_file(cursor, 'db/init.sql')
+
+    # Criar triggers
+    run_sql_file(cursor, 'db/trigger.sql', '---')
     
     conn.commit()
     cursor.close()
