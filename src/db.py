@@ -5,6 +5,12 @@ from settings import Settings
 settings = Settings()
 
 
+def run_sql_file(cursor, path: str, separator: str=';'):
+    with open(file=path, mode='r', encoding='utf-8') as fp:
+        for stmt in fp.read().split(separator):
+            if stmt.strip():
+                cursor.execute(stmt)
+
 def init_db():
     conn = mysql.connector.connect(
         host=settings.DB_HOST,
@@ -19,10 +25,8 @@ def init_db():
     cursor.execute(f'USE {settings.DATABASE}')
 
     # Executar instruções de init.sql
-    with open(file='db/init.sql', mode='r', encoding='utf-8') as fp:
-        for stmt in fp.read().split(';'):
-            if stmt.strip():
-                cursor.execute(stmt)
+    run_sql_file(cursor, 'db/init.sql')
+    
     conn.commit()
     cursor.close()
     conn.close()
