@@ -28,7 +28,7 @@ def init_db():
     run_sql_file(cursor, 'db/init.sql')
 
     # Criar triggers
-    run_sql_file(cursor, 'db/trigger.sql', '---')
+    run_sql_file(cursor, 'db/triggers.sql', '---')
     
     conn.commit()
     cursor.close()
