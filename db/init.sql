@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS estantes (
 -- Especialização de Pessoa: Usuário
 CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario INT NOT NULL,
-    status BOOLEAN,
-    limite_emprestimos INT NOT NULL DEFAULT 5,
+    status BOOLEAN NOT NULL,
+    limite_emprestimos INT NOT NULL,
     PRIMARY KEY (id_usuario),
     FOREIGN KEY (id_usuario) REFERENCES pessoas(id)
 );
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS funcionarios (
     id_funcionario INT NOT NULL,
     id_cargo INT NOT NULL,
-    data_contratacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_contratacao DATE NOT NULL,
     PRIMARY KEY (id_funcionario),
     FOREIGN KEY (id_funcionario) REFERENCES pessoas(id),
     FOREIGN KEY (id_cargo) REFERENCES cargos(id)
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
 -- Especialização de Livro: Exemplar Digital
 CREATE TABLE IF NOT EXISTS exemplar_digital (
     id_digital INT NOT NULL,
-    numero_acessos INT NOT NULL DEFAULT 0,
+    numero_acessos INT NOT NULL,
     URL VARCHAR(200) NOT NULL UNIQUE,
     PRIMARY KEY (id_digital),
     FOREIGN KEY (id_digital) REFERENCES livros(id)
