@@ -25,7 +25,19 @@ DB_USER=[USUÁRIO DO BANCO DE DADOS]
 DB_PASSWORD=[SENHA PARA O USUÁRIO]
 DATABASE=atividade_computacional_db
 ```
-OBS.: não se esqueça de garantir o acesso do usuário `DB_USER` a `atividade_computacional_db`.
+Observações:
+- Garanta o acesso do usuário `DB_USER` a `atividade_computacional_db`.
+- Configure `log_bin_trust_function_creators = 1` no arquivo `my.cfg`:
+    * Linux: `/etc/my.cnf` ou `/etc/my.cnf.d/mysql-server.cnf`
+    * Windows: `C:\ProgramData\MySQL\MySQL Server X.X\my.ini`
+    * Então, adicione sob `[mysqld]`:
+    ```
+    log_bin_trust_function_creators = 1
+    ```
+    * Depois reinicie o serviço:
+        * Linux: `sudo systemctl restart mysqld`
+        * Windows: reinicie o serviço "MySQL" pelo Gerenciador de Serviços ou via `services.msc`
+
 
 4. Inicie o FastAPI usando:
 
