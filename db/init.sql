@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS estantes (
 -- Especialização de Pessoa: Usuário
 CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario INT NOT NULL,
-    status BOOLEAN NOT NULL DEFAULT TRUE,
+    status BOOLEAN,
     limite_emprestimos INT NOT NULL DEFAULT 5,
     PRIMARY KEY (id_usuario),
     FOREIGN KEY (id_usuario) REFERENCES pessoas(id)
