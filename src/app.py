@@ -5,12 +5,13 @@ from fastapi import FastAPI
 from db import init_db, init_connection_pool
 from schemas import UsuarioSchema
 from db_schemas import UsuarioLista
-
+from log import *
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print('      INFO   Inicializando banco de dados.')
+    log_info('Inicializando banco de dados.')
     init_db()
+    log_info('Inicializando conexão com o banco de dados.')
     init_connection_pool()
 
     # App recebe requests
