@@ -18,3 +18,5 @@ BEGIN
     ('Auxiliar');
 END
 ---
+CALL sp_criar_cargos()
+---
