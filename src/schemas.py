@@ -16,4 +16,4 @@ class UsuarioSchema(PessoaSchema):
 
 
 class FuncionarioSchema(PessoaSchema):
-    ...
+    cargo: int | str
