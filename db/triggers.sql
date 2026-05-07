@@ -7,7 +7,7 @@
 
 -- Trigger para definir o status do usuário como ativo
 ---
-CREATE TRIGGER tg_default_usuario_ativo
+CREATE TRIGGER IF NOT EXISTS tg_default_usuario_ativo
 BEFORE INSERT ON usuarios
 FOR EACH ROW
 BEGIN
@@ -19,7 +19,7 @@ END
 
 -- Trigger para definir o limite de empréstimo padrão como 5
 ---
-CREATE TRIGGER tg_default_usuario_limite
+CREATE TRIGGER IF NOT EXISTS tg_default_usuario_limite
 BEFORE INSERT ON usuarios
 FOR EACH ROW
 BEGIN
@@ -31,7 +31,7 @@ END
 
 -- Trigger para definir a data de contratação padrão como a data atual
 ---
-CREATE TRIGGER tg_default_funcionario_data_contratacao
+CREATE TRIGGER IF NOT EXISTS tg_default_funcionario_data_contratacao
 BEFORE INSERT ON funcionarios
 FOR EACH ROW
 BEGIN
@@ -43,7 +43,7 @@ END
 
 -- Trigger para definir o número de acessos padrão como 0
 ---
-CREATE TRIGGER tg_default_fisico_acessos
+CREATE TRIGGER IF NOT EXISTS tg_default_fisico_acessos
 BEFORE INSERT ON exemplar_digital
 FOR EACH ROW
 BEGIN
