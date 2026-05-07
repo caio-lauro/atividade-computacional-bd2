@@ -5,11 +5,12 @@ from settings import Settings
 settings = Settings()
 
 
-def run_sql_file(cursor, path: str, separator: str=';'):
+def run_sql_file(cursor, path: str, separator: str = ';'):
     with open(file=path, mode='r', encoding='utf-8') as fp:
         for stmt in fp.read().split(separator):
             if stmt.strip():
                 cursor.execute(stmt)
+
 
 def init_db():
     conn = mysql.connector.connect(
@@ -29,7 +30,7 @@ def init_db():
 
     # Criar triggers
     run_sql_file(cursor, 'db/triggers.sql', '---')
-    
+
     conn.commit()
     cursor.close()
     conn.close()
