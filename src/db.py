@@ -1,6 +1,7 @@
 import mysql
 from mysql.connector import pooling
 from settings import Settings
+from log import *
 
 settings = Settings()
 
@@ -21,19 +22,21 @@ def init_db():
 
     cursor = conn.cursor()
 
-    # Criar database caso não exista e usá-lo
+    log_info('Criando database caso não exista.')
     cursor.execute(f'CREATE DATABASE IF NOT EXISTS {settings.DATABASE}')
     cursor.execute(f'USE {settings.DATABASE}')
 
-    # Inicializar banco de dados criando as tabelas
+    log_info('Criando tabelas.')
     run_sql_file(cursor, 'db/init.sql')
 
-    # Criar triggers
+    log_info('Criando triggers.')
     run_sql_file(cursor, 'db/triggers.sql', '---')
 
     conn.commit()
     cursor.close()
     conn.close()
+
+    log_info('Inicialização finalizada.')
 
 
 connection_pool = None
