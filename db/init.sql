@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS livros (
 -- Tabela de cargos para Funcionário
 CREATE TABLE IF NOT EXISTS cargos (
     id INT AUTO_INCREMENT NOT NULL,
-    cargo VARCHAR(50) NOT NULL,
+    cargo VARCHAR(50) NOT NULL UNIQUE,
     PRIMARY KEY (id)
 );
 
