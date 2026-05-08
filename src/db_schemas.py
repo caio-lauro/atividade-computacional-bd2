@@ -1,30 +1,21 @@
 from datetime import date
-from pydantic import BaseModel
-from schemas import PessoaSchema, UsuarioSchema, FuncionarioSchema
+from pydantic import BaseModel, EmailStr
 
 
-class PessoaDBSchema(PessoaSchema):
+class _PessoaDBSchema(BaseModel):
     id: int
+    nome: str
+    CPF: str
+    email: EmailStr
+    telefone: str
+    data_nascimento: date
 
 
-class UsuarioDBSchema(UsuarioSchema):
-    id_usuario: int
+class UsuarioDBSchema(_PessoaDBSchema):
     status: bool
     limite_emprestimos: int
 
 
-class FuncionarioDBSchema(FuncionarioSchema):
-    id_funcionario: int
+class FuncionarioDBSchema(_PessoaDBSchema):
+    cargo: str
     data_contratacao: date
-
-
-class PessoaLista(BaseModel):
-    pessoas: list[PessoaDBSchema]
-
-
-class UsuarioLista(BaseModel):
-    usuarios: list[UsuarioDBSchema]
-
-
-class FuncionarioLista(BaseModel):
-    funcionarios: list[FuncionarioDBSchema]
