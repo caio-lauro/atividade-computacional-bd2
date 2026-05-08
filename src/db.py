@@ -29,6 +29,9 @@ def init_db():
     log_info('Criando tabelas.')
     run_sql_file(cursor, 'db/init.sql')
 
+    log_info('Criando visões.')
+    run_sql_file(cursor, 'db/views.sql')
+
     log_info('Criando procedures.')
     run_sql_file(cursor, 'db/procedures.sql', '---')
 
