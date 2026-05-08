@@ -21,7 +21,29 @@ class StatusUsuario(str, Enum):
     inativo = 'inativo'
 
 
+class AtualizarUsuarioSchema(BaseModel):
+    nome: str | None = None
+    CPF: str | None = None
+    email: EmailStr | None = None
+    senha: str | None = None
+    telefone: str | None = None
+    data_nascimento: date | None = None
+    status: StatusUsuario | None = None
+    limite_emprestimos: int | None = None
+
+
 class FuncionarioSchema(PessoaSchema):
+    cargo: int | str
+    data_contratacao: date | None = None
+
+
+class AtualizarFuncionarioSchema(BaseModel):
+    nome: str | None = None
+    CPF: str | None = None
+    email: EmailStr | None = None
+    senha: str | None = None
+    telefone: str | None = None
+    data_nascimento: date | None = None
     cargo: int | str
     data_contratacao: date | None = None
 
