@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.responses import RedirectResponse
 from mysql.connector import errors as mysql_errors
 from typing import Annotated
 
@@ -22,12 +23,15 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan, 
+    swagger_ui_parameters={"tryItOutEnabled": True}
+)
 
 
-@app.get('/')
+@app.get('/', include_in_schema=False)
 def read_root():
-    return {'mensagem': 'Olá mundo!'}
+    return RedirectResponse(url='/docs')
 
 
 @app.get('/usuario/', response_model=list[UsuarioDBSchema])
