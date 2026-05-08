@@ -1,11 +1,11 @@
 from http import HTTPStatus
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from mysql.connector import errors as mysql_errors
 from typing import Annotated
 
 from db import init_db, init_connection_pool, db_fetch_one, db_fetch_all, db_insert, db_modify
-from schemas import UsuarioSchema, StatusUsuario, FuncionarioSchema, CargoFuncionario
+from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema, FuncionarioSchema, CargoFuncionario, AtualizarFuncionarioSchema
 from db_schemas import UsuarioDBSchema, FuncionarioDBSchema
 from log import *
 from utils import criar_pessoa, resolver_cargo
@@ -62,12 +62,18 @@ def ler_usuarios(
         params.append(status == 'ativo')
 
     where = '' if not conditions else 'WHERE ' + ' AND '.join(conditions)
-    print(where)
-    return db_fetch_all(
+    fetch = db_fetch_all(
         'SELECT * FROM view_usuario '
         f'{where}',
         params
     )
+
+    if not fetch:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum usuário com esses critérios foi encontrado.'
+        )
+    return fetch
 
 
 @app.get('/funcionario/', response_model=list[FuncionarioDBSchema])
@@ -103,12 +109,18 @@ def ler_funcionarios(
         params.append(cargo)
 
     where = '' if not conditions else 'WHERE ' + ' AND '.join(conditions)
-    print(where)
-    return db_fetch_all(
+    fetch = db_fetch_all(
         'SELECT * FROM view_funcionario '
         f'{where}',
         params
     )
+
+    if not fetch:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum funcionário com esses critérios foi encontrado.'
+        )
+    return fetch
 
 
 @app.post('/usuario/', status_code=HTTPStatus.CREATED, response_model=int)
@@ -145,9 +157,106 @@ def criar_funcionario(funcionario: FuncionarioSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put('/usuario/{id_usuario}', response_model=UsuarioSchema)
-def atualizar_usuario(id_usuario: int, usuario: UsuarioSchema):
-    ...
+@app.put('/usuario/{id_usuario}', response_model=int)
+def atualizar_usuario(
+    id_usuario: int,
+    usuario: AtualizarUsuarioSchema,
+    response: Response
+):
+    # Buscar pessoa e usuário para ver se existe
+    if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_usuario,)) is None \
+        or db_fetch_one(
+            'SELECT id_funcionario FROM usuarios WHERE id_usuario = %s',
+            (id_usuario,)
+    ) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum usuário com esse ID foi encontrado.'
+        )
+
+    fields = []
+    params = []
+
+    data = usuario.model_dump(exclude_none=True)
+
+    pessoa_fields = {'nome', 'CPF', 'email',
+                     'senha', 'telefone', 'data_nascimento'}
+    pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
+
+    rows = 0
+    if pessoas_data:
+        fields = [f'{k} = %s' for k in pessoas_data]
+        params = list(pessoas_data.values()) + [id_usuario]
+        rows = db_modify(
+            f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+
+    usuario_fields = {'status', 'limite_emprestimos'}
+    usuarios_data = {k: v for k, v in data.items() if k in usuario_fields}
+
+    if usuarios_data:
+        fields = [f'{k} = %s' for k in usuarios_data]
+        params = list(usuarios_data.values()) + [id_usuario]
+        rows += db_modify(
+            f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
+
+    if rows == 0:
+        response.status_code = HTTPStatus.NO_CONTENT
+
+    return rows
+
+
+@app.put('/funcionario/{id_funcionario}', response_model=int)
+def atualizar_funcionario(
+    id_funcionario: int,
+    funcionario: AtualizarFuncionarioSchema,
+    response: Response
+):
+    # Buscar pessoa e funcionário para ver se existe
+    if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_funcionario,)) is None \
+        or db_fetch_one(
+            'SELECT id_funcionario FROM funcionarios WHERE id_funcionario = %s',
+            (id_funcionario,)
+    ) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum funcionário com esse ID foi encontrado.'
+        )
+
+    fields = []
+    params = []
+
+    data = funcionario.model_dump(exclude_none=True)
+
+    pessoa_fields = {'nome', 'CPF', 'email',
+                     'senha', 'telefone', 'data_nascimento'}
+    pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
+
+    rows = 0
+    if pessoas_data:
+        fields = [f'{k} = %s' for k in pessoas_data]
+        params = list(pessoas_data.values()) + [id_funcionario]
+        rows = db_modify(
+            f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+
+    funcionarios_fields = {'cargo', 'data_contratacao'}
+    funcionarios_data = {k: v for k,
+                         v in data.items() if k in funcionarios_fields}
+
+    if 'cargo' in funcionarios_data:
+        cargo = funcionarios_data['cargo']
+        del funcionarios_data['cargo']
+        funcionarios_data['id_cargo'] = resolver_cargo(cargo)
+
+    if funcionarios_data:
+        fields = [f'{k} = %s' for k in funcionarios_data]
+        params = list(funcionarios_data.values()) + [id_funcionario]
+        rows += db_modify(
+            f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
+
+    if rows == 0:
+        response.status_code = HTTPStatus.NO_CONTENT
+
+    return rows
 
 
 @app.delete('/usuario/{id_usuario}', response_model=int)
