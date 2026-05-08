@@ -65,3 +65,63 @@ def get_connection() -> pooling.PooledMySQLConnection:
         init_connection_pool()
 
     return connection_pool.get_connection()
+
+
+def db_fetch_one(sql, params=()) -> dict | None:
+    """Função usada para obter somente um valor através da query"""
+    return _db_fetch(sql, params, False)
+
+
+def db_fetch_all(sql, params=()) -> list[dict]:
+    """Função usada para obter uma lista de valores através da query"""
+    return _db_fetch(sql, params, True)
+
+
+def _db_fetch(sql, params, return_multiple: bool) -> list[dict] | dict | None:
+    """
+    Função interna usada por `db_fetch_one` e `db_fetch_all`,
+    a fim de evitar repetição de código.
+    """
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(sql, params)
+        return cursor.fetchall() if return_multiple else cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def db_insert(sql, params=()) -> int:
+    """
+    Função para inserir no banco de dados.
+
+    Retorna o id da última inserção.
+    """
+    return _db_execute(sql, params, True)
+
+
+def db_modify(sql, params=()) -> int:
+    """
+    Função para realizar modificações no banco de dados, como updates e deletes.
+
+    Retorna o número de linhas afetados.
+    """
+    return _db_execute(sql, params, False)
+
+
+def _db_execute(sql, params, is_insert) -> int:
+    """
+    Função interna para realizar atualizações: inserts, updates e deletes.
+
+    Retorna lastrowid para insert e rowcount, caso contrário.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(sql, params)
+        conn.commit()
+        return cursor.lastrowid if is_insert else cursor.rowcount
+    finally:
+        cursor.close()
+        conn.close()
