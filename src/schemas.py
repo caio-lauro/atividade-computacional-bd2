@@ -17,3 +17,4 @@ class UsuarioSchema(PessoaSchema):
 
 class FuncionarioSchema(PessoaSchema):
     cargo: int | str
+    data_contratacao: date | None = None
