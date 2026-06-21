@@ -10,6 +10,7 @@ from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema, Funcio
 from db_schemas import UsuarioDBSchema, FuncionarioDBSchema
 from log import *
 from utils import criar_pessoa, resolver_cargo
+from auth import hash_senha
 
 
 @asynccontextmanager
@@ -187,6 +188,9 @@ def atualizar_usuario(
                      'senha', 'telefone', 'data_nascimento'}
     pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
 
+    if 'senha' in pessoas_data:
+        pessoas_data['senha'] = hash_senha(pessoas_data['senha'])
+
     rows = 0
     if pessoas_data:
         fields = [f'{k} = %s' for k in pessoas_data]
@@ -244,6 +248,9 @@ def atualizar_funcionario(
     pessoa_fields = {'nome', 'CPF', 'email',
                      'senha', 'telefone', 'data_nascimento'}
     pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
+
+    if 'senha' in pessoas_data:
+        pessoas_data['senha'] = hash_senha(pessoas_data['senha'])
 
     rows = 0
     if pessoas_data:
