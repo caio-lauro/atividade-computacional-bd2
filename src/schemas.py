@@ -44,7 +44,7 @@ class AtualizarFuncionarioSchema(BaseModel):
     senha: str | None = None
     telefone: str | None = None
     data_nascimento: date | None = None
-    cargo: int | str
+    cargo: int | str | None = None
     data_contratacao: date | None = None
 
 
@@ -52,5 +52,6 @@ def criar_enum_cargos() -> type:
     from db import db_fetch_all
     cargos = db_fetch_all('SELECT id, cargo FROM cargos ORDER BY id')
     return Enum('CargoFuncionario', {c['cargo']: c['cargo'] for c in cargos})
+
 
 CargoFuncionario = criar_enum_cargos()
