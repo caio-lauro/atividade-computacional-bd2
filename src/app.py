@@ -139,9 +139,10 @@ def criar_usuario(usuario: UsuarioSchema):
         return id
     except mysql_errors.IntegrityError:
         raise HTTPException(
-            status_code=409, detail="CPF ou email já cadastrado")
+            status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
     except mysql_errors.Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @app.post('/funcionario/', status_code=HTTPStatus.CREATED, response_model=int, tags=['Funcionários'])
@@ -157,9 +158,10 @@ def criar_funcionario(funcionario: FuncionarioSchema):
         return id
     except mysql_errors.IntegrityError:
         raise HTTPException(
-            status_code=409, detail="CPF ou email já cadastrado")
+            status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
     except mysql_errors.Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @app.put('/usuario/{id_usuario}', response_model=int, tags=['Usuários'])
@@ -200,9 +202,10 @@ def atualizar_usuario(
                 f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
         except mysql_errors.IntegrityError:
             raise HTTPException(
-                status_code=409, detail="CPF ou email já cadastrado")
+                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
     usuario_fields = {'status', 'limite_emprestimos'}
     usuarios_data = {k: v for k, v in data.items() if k in usuario_fields}
@@ -263,9 +266,10 @@ def atualizar_funcionario(
                 f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
         except mysql_errors.IntegrityError:
             raise HTTPException(
-                status_code=409, detail="CPF ou email já cadastrado")
+                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
     funcionarios_fields = {'cargo', 'data_contratacao'}
     funcionarios_data = {k: v for k,
@@ -284,9 +288,10 @@ def atualizar_funcionario(
                 f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
         except mysql_errors.IntegrityError:
             raise HTTPException(
-                status_code=409, detail="CPF ou email já cadastrado")
+                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
     if rows == 0:
         response.status_code = HTTPStatus.NO_CONTENT
