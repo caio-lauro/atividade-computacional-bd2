@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    lifespan=lifespan, 
+    lifespan=lifespan,
     swagger_ui_parameters={"tryItOutEnabled": True}
 )
 
@@ -170,7 +170,7 @@ def atualizar_usuario(
     # Buscar pessoa e usuário para ver se existe
     if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_usuario,)) is None \
         or db_fetch_one(
-            'SELECT id_funcionario FROM usuarios WHERE id_usuario = %s',
+            'SELECT id_usuario FROM usuarios WHERE id_usuario = %s',
             (id_usuario,)
     ) is None:
         raise HTTPException(
@@ -265,4 +265,47 @@ def atualizar_funcionario(
 
 @app.delete('/usuario/{id_usuario}', response_model=int)
 def deletar_usuario(id_usuario: int):
-    ...
+    # Buscar pessoa e usuário para ver se existe
+    if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_usuario,)) is None \
+        or db_fetch_one(
+            'SELECT id_usuario FROM usuarios WHERE id_usuario = %s',
+            (id_usuario,)
+    ) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum usuário com esse ID foi encontrado.'
+        )
+
+    rows = db_modify(
+        'DELETE FROM usuarios WHERE id_usuario = %s', (id_usuario,)
+    )
+
+    rows += db_modify(
+        'DELETE FROM pessoas WHERE id = %s', (id_usuario,)
+    )
+
+    return rows
+
+
+@app.delete('/funcinario/{id_funcionario}', response_model=int)
+def deletar_funcionario(id_funcionario: int):
+    # Buscar pessoa e funcionário para ver se existe
+    if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_funcionario,)) is None \
+        or db_fetch_one(
+            'SELECT id_funcionario FROM funcionarios WHERE id_funcionario = %s',
+            (id_funcionario,)
+    ) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhum funcionário com esse ID foi encontrado.'
+        )
+    
+    rows = db_modify(
+        'DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)
+    )
+
+    rows += db_modify(
+        'DELETE FROM pessoas WHERE id = %s', (id_funcionario,)
+    )
+
+    return rows
