@@ -199,7 +199,8 @@ def atualizar_usuario(
             rows = db_modify(
                 f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
         except mysql_errors.IntegrityError:
-            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+            raise HTTPException(
+                status_code=409, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -213,7 +214,8 @@ def atualizar_usuario(
             rows += db_modify(
                 f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
         except mysql_errors.IntegrityError:
-            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+            raise HTTPException(
+                status_code=409, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -260,7 +262,8 @@ def atualizar_funcionario(
             rows = db_modify(
                 f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
         except mysql_errors.IntegrityError:
-            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+            raise HTTPException(
+                status_code=409, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -280,7 +283,8 @@ def atualizar_funcionario(
             rows += db_modify(
                 f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
         except mysql_errors.IntegrityError:
-            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+            raise HTTPException(
+                status_code=409, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
             raise HTTPException(status_code=500, detail=str(e))
 
@@ -326,7 +330,7 @@ def deletar_funcionario(id_funcionario: int):
             HTTPStatus.NOT_FOUND,
             'Nenhum funcionário com esse ID foi encontrado.'
         )
-    
+
     rows = db_modify(
         'DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)
     )
