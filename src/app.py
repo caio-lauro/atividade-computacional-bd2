@@ -35,7 +35,7 @@ def read_root():
     return RedirectResponse(url='/docs')
 
 
-@app.get('/usuario/', response_model=list[UsuarioDBSchema])
+@app.get('/usuario/', response_model=list[UsuarioDBSchema], tags=['Usuários'])
 def ler_usuarios(
     id_usuario: int | None = None,
     nome: str | None = None,
@@ -81,7 +81,7 @@ def ler_usuarios(
     return fetch
 
 
-@app.get('/funcionario/', response_model=list[FuncionarioDBSchema])
+@app.get('/funcionario/', response_model=list[FuncionarioDBSchema], tags=['Funcionários'])
 def ler_funcionarios(
     id_funcionario: int | None = None,
     nome: str | None = None,
@@ -128,7 +128,7 @@ def ler_funcionarios(
     return fetch
 
 
-@app.post('/usuario/', status_code=HTTPStatus.CREATED, response_model=int)
+@app.post('/usuario/', status_code=HTTPStatus.CREATED, response_model=int, tags=['Usuários'])
 def criar_usuario(usuario: UsuarioSchema):
     try:
         id = criar_pessoa(usuario)
@@ -144,7 +144,7 @@ def criar_usuario(usuario: UsuarioSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post('/funcionario/', status_code=HTTPStatus.CREATED, response_model=int)
+@app.post('/funcionario/', status_code=HTTPStatus.CREATED, response_model=int, tags=['Funcionários'])
 def criar_funcionario(funcionario: FuncionarioSchema):
     try:
         id_cargo = resolver_cargo(funcionario.cargo)
@@ -162,7 +162,7 @@ def criar_funcionario(funcionario: FuncionarioSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put('/usuario/{id_usuario}', response_model=int)
+@app.put('/usuario/{id_usuario}', response_model=int, tags=['Usuários'])
 def atualizar_usuario(
     id_usuario: int,
     usuario: AtualizarUsuarioSchema,
@@ -225,7 +225,7 @@ def atualizar_usuario(
     return rows
 
 
-@app.put('/funcionario/{id_funcionario}', response_model=int)
+@app.put('/funcionario/{id_funcionario}', response_model=int, tags=['Funcionários'])
 def atualizar_funcionario(
     id_funcionario: int,
     funcionario: AtualizarFuncionarioSchema,
@@ -294,7 +294,7 @@ def atualizar_funcionario(
     return rows
 
 
-@app.delete('/usuario/{id_usuario}', response_model=int)
+@app.delete('/usuario/{id_usuario}', response_model=int, tags=['Usuários'])
 def deletar_usuario(id_usuario: int):
     # Buscar pessoa e usuário para ver se existe
     if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_usuario,)) is None \
@@ -318,7 +318,7 @@ def deletar_usuario(id_usuario: int):
     return rows
 
 
-@app.delete('/funcinario/{id_funcionario}', response_model=int)
+@app.delete('/funcinario/{id_funcionario}', response_model=int, tags=['Funcionários'])
 def deletar_funcionario(id_funcionario: int):
     # Buscar pessoa e funcionário para ver se existe
     if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_funcionario,)) is None \
