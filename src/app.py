@@ -191,8 +191,13 @@ def atualizar_usuario(
     if pessoas_data:
         fields = [f'{k} = %s' for k in pessoas_data]
         params = list(pessoas_data.values()) + [id_usuario]
-        rows = db_modify(
-            f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+        try:
+            rows = db_modify(
+                f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+        except mysql_errors.IntegrityError:
+            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     usuario_fields = {'status', 'limite_emprestimos'}
     usuarios_data = {k: v for k, v in data.items() if k in usuario_fields}
@@ -200,8 +205,13 @@ def atualizar_usuario(
     if usuarios_data:
         fields = [f'{k} = %s' for k in usuarios_data]
         params = list(usuarios_data.values()) + [id_usuario]
-        rows += db_modify(
-            f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
+        try:
+            rows += db_modify(
+                f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
+        except mysql_errors.IntegrityError:
+            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     if rows == 0:
         response.status_code = HTTPStatus.NO_CONTENT
@@ -239,8 +249,13 @@ def atualizar_funcionario(
     if pessoas_data:
         fields = [f'{k} = %s' for k in pessoas_data]
         params = list(pessoas_data.values()) + [id_funcionario]
-        rows = db_modify(
-            f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+        try:
+            rows = db_modify(
+                f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
+        except mysql_errors.IntegrityError:
+            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     funcionarios_fields = {'cargo', 'data_contratacao'}
     funcionarios_data = {k: v for k,
@@ -254,8 +269,13 @@ def atualizar_funcionario(
     if funcionarios_data:
         fields = [f'{k} = %s' for k in funcionarios_data]
         params = list(funcionarios_data.values()) + [id_funcionario]
-        rows += db_modify(
-            f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
+        try:
+            rows += db_modify(
+                f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
+        except mysql_errors.IntegrityError:
+            raise HTTPException(status_code=409, detail="CPF ou email já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     if rows == 0:
         response.status_code = HTTPStatus.NO_CONTENT
