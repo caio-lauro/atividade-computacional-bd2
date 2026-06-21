@@ -32,11 +32,14 @@ def init_db():
     log_info('Criando visões.')
     run_sql_file(cursor, 'db/views.sql')
 
+    log_info('Criando funções.')
+    run_sql_file(cursor, 'db/functions.sql', separator='---')
+
     log_info('Criando procedures.')
-    run_sql_file(cursor, 'db/procedures.sql', '---')
+    run_sql_file(cursor, 'db/procedures.sql', separator='---')
 
     log_info('Criando triggers.')
-    run_sql_file(cursor, 'db/triggers.sql', '---')
+    run_sql_file(cursor, 'db/triggers.sql', separator='---')
 
     conn.commit()
     cursor.close()
