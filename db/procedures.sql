@@ -53,3 +53,19 @@ BEGIN
     INNER JOIN estantes e ON oe.id_estante = e.id;
 END
 ---
+
+-- Procedure que mostra a capacidade de estantes e quantos livros estão nelas
+---
+CREATE PROCEDURE IF NOT EXISTS sp_lotacao_estantes()
+BEGIN
+    SELECT 
+        e.identificador_fisico AS "Identificador da estante", 
+        COUNT(ef.id_fisico) AS "Quantidade na estante", 
+        e.capacidade AS "Capacidade da estante",
+        CONCAT(ROUND((COUNT(ef.id_fisico) / e.capacidade) * 100, 2), "%") AS "Porcentagem"
+    FROM estantes e
+    LEFT JOIN exemplar_fisico ef ON e.id = ef.id_estante_associada
+    LEFT JOIN livros l ON ef.id_fisico = l.id
+    GROUP BY e.identificador_fisico, e.capacidade;
+END
+---
