@@ -55,3 +55,13 @@ def criar_enum_cargos() -> type:
 
 
 CargoFuncionario = criar_enum_cargos()
+
+
+class EstanteSchema(BaseModel):
+    identificador_fisico: str
+    capacidade: int
+
+
+class AtualizarEstanteSchema(BaseModel):
+    identificador_fisico: str | None = None
+    capacidade: int | None = None

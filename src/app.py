@@ -6,8 +6,8 @@ from mysql.connector import errors as mysql_errors
 from typing import Annotated
 
 from db import init_db, init_connection_pool, db_fetch_one, db_fetch_all, db_insert, db_modify
-from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema, FuncionarioSchema, CargoFuncionario, AtualizarFuncionarioSchema
-from db_schemas import UsuarioDBSchema, FuncionarioDBSchema
+from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema, FuncionarioSchema, CargoFuncionario, AtualizarFuncionarioSchema, EstanteSchema, AtualizarEstanteSchema
+from db_schemas import UsuarioDBSchema, FuncionarioDBSchema, EstanteDBSchema
 from log import *
 from utils import criar_pessoa, resolver_cargo
 from auth import hash_senha
@@ -218,9 +218,10 @@ def atualizar_usuario(
                 f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
         except mysql_errors.IntegrityError:
             raise HTTPException(
-                status_code=409, detail="CPF ou email já cadastrado")
+                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
         except mysql_errors.Error as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 
     if rows == 0:
         response.status_code = HTTPStatus.NO_CONTENT
@@ -345,3 +346,117 @@ def deletar_funcionario(id_funcionario: int):
     )
 
     return rows
+
+
+@app.get('/estante/', response_model=list[EstanteDBSchema], tags=['Estantes'])
+def ler_estantes(
+    id_estante: int | None = None,
+    identificador_fisico: str | None = None,
+    capacidade: int | None = None
+):
+    conditions = []
+    params = []
+
+    if id_estante:
+        conditions.append('id = %s')
+        params.append(id_estante)
+
+    if identificador_fisico:
+        conditions.append('identificador_fisico = %s')
+        params.append(identificador_fisico)
+
+    if capacidade is not None:
+        conditions.append('capacidade = %s')
+        params.append(capacidade)
+
+    where = '' if not conditions else 'WHERE ' + ' AND '.join(conditions)
+    fetch = db_fetch_all(
+        'SELECT * FROM estantes '
+        f'{where}',
+        params
+    )
+
+    if not fetch:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhuma estante com esses critérios foi encontrada.'
+        )
+    return fetch
+
+
+@app.post('/estante/', status_code=HTTPStatus.CREATED, response_model=int, tags=['Estantes'])
+def criar_estantes(estante: EstanteSchema):
+    try:
+        return db_insert(
+            'INSERT INTO estantes (identificador_fisico, capacidade) '
+            'VALUES (%s, %s)',
+            (estante.identificador_fisico, estante.capacidade)
+        )
+    except mysql_errors.IntegrityError:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT, detail="Identificador físico já cadastrado")
+    except mysql_errors.Error as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@app.put('/estante/{id_estante}', response_model=int, tags=['Estantes'])
+def atualizar_estantes(
+    id_estante: int,
+    estante: AtualizarEstanteSchema,
+    response: Response
+):
+    # Buscar estante para ver se existe
+    if db_fetch_one('SELECT id FROM estantes WHERE id = %s', (id_estante,)) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhuma estante com esse ID foi encontrada.'
+        )
+
+    if not estante.identificador_fisico and estante.capacidade is None:
+        response.status_code = HTTPStatus.NO_CONTENT
+
+    if estante.identificador_fisico and estante.capacidade is not None:
+        try:
+            return db_modify(
+                'UPDATE estantes SET identificador_fisico = %s, capacidade = %s WHERE id = %s',
+                (estante.identificador_fisico, estante.capacidade, id_estante)
+            )
+        except mysql_errors.IntegrityError:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT, detail="Identificador Fisico já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+    if estante.identificador_fisico:
+        try:
+            return db_modify(
+                'UPDATE estantes SET identificador_fisico = %s WHERE id = %s',
+                (estante.identificador_fisico, id_estante)
+            )
+        except mysql_errors.IntegrityError:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT, detail="Identificador Fisico já cadastrado")
+        except mysql_errors.Error as e:
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+
+    return db_modify(
+        'UPDATE estantes SET capacidade = %s WHERE id = %s',
+        (estante.capacidade, id_estante)
+    )
+
+
+@app.delete('/estante/{id_estante}', response_model=int, tags=['Estantes'])
+def deletar_estante(id_estante: int):
+    # Buscar estante para ver se existe
+    if db_fetch_one('SELECT id FROM estantes WHERE id = %s', (id_estante,)) is None:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Nenhuma estante com esse ID foi encontrada.'
+        )
+
+    return db_modify(
+        'DELETE FROM estantes WHERE id = %s', (id_estante,)
+    )
