@@ -4,7 +4,6 @@ from fastapi.responses import RedirectResponse
 
 from db import init_db, init_connection_pool
 from log import *
-from routers import usuarios, funcionarios, estantes
 
 
 @asynccontextmanager
@@ -13,6 +12,12 @@ async def lifespan(app: FastAPI):
     init_db()
     log_info('Inicializando conexão com o banco de dados.')
     init_connection_pool()
+
+    from routers import usuarios, funcionarios, estantes
+
+    app.include_router(usuarios.router)
+    app.include_router(funcionarios.router)
+    app.include_router(estantes.router)
 
     # App recebe requests
     yield
@@ -27,8 +32,3 @@ app = FastAPI(
 @app.get('/', include_in_schema=False)
 def read_root():
     return RedirectResponse(url='/docs')
-
-
-app.include_router(usuarios.router)
-app.include_router(funcionarios.router)
-app.include_router(estantes.router)
