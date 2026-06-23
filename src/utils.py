@@ -10,7 +10,7 @@ def criar_pessoa(pessoa: PessoaSchema) -> int:
     return db_insert(
         'INSERT INTO pessoas (nome, CPF, email, senha, telefone, data_nascimento) '
         'VALUES (%s, %s, %s, %s, %s, %s)',
-        (pessoa.nome, pessoa.CPF.replace('-', '').replace('.'), pessoa.email,
+        (pessoa.nome, pessoa.CPF.replace('-', '').replace('.', ''), pessoa.email,
          hash_senha(pessoa.senha), pessoa.telefone.replace('-', ''), pessoa.data_nascimento)
     )
 
