@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
 CREATE TABLE IF NOT EXISTS exemplar_digital (
     id_digital INT NOT NULL,
     numero_acessos INT NOT NULL,
-    URL VARCHAR(200) NOT NULL UNIQUE,
+    URL VARCHAR(768) NOT NULL UNIQUE,
     PRIMARY KEY (id_digital),
     FOREIGN KEY (id_digital) REFERENCES livros(id)
 );
@@ -104,6 +104,8 @@ CREATE TABLE IF NOT EXISTS autores_livros (
 CREATE TABLE IF NOT EXISTS emprestimos (
     id_usuario INT NOT NULL,
     id_fisico INT NOT NULL,
+    data_emprestimo DATE NOT NULL,
+    data_devolucao DATE NOT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
     FOREIGN KEY (id_fisico) REFERENCES exemplar_fisico(id_fisico)
 );
