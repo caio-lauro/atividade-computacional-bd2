@@ -65,3 +65,39 @@ class EstanteSchema(BaseModel):
 class AtualizarEstanteSchema(BaseModel):
     identificador_fisico: str | None = None
     capacidade: int | None = None
+
+
+class LivroSchema(BaseModel):
+    ISBN: str
+    data_publicacao: date
+    titulo: str
+
+
+class ExemplarDigitalSchema(LivroSchema):
+    acessos: int
+    URL: str
+
+
+class AtualizarExemplarDigitalSchema(BaseModel):
+    ISBN: str | None = None
+    data_publicacao: date | None = None
+    titulo: str | None = None
+    acessos: int | None = None
+    URL: str | None = None
+
+
+class ExemplarFisicoSchema(LivroSchema):
+    estante: str
+
+
+class StatusExemplarFisico(str, Enum):
+    disponivel = 'disponível'
+    indisponivel = 'indisponível'
+
+
+class AtualizarExemplarFisicoSchema(BaseModel):
+    ISBN: str | None = None
+    data_publicacao: date | None = None
+    titulo: str | None = None
+    status: StatusExemplarFisico | None = None
+    estante: str | None = None
