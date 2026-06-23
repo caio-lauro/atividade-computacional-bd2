@@ -60,11 +60,11 @@ BEFORE INSERT ON emprestimos
 FOR EACH ROW
 BEGIN
     SET autocommit = 0;
-    START TRANSACTION;
     DECLARE empresitmos_ativos INT;
     DECLARE t_limite_emprestimos INT;
     DECLARE disponibilidade_livro BOOLEAN;
 
+    START TRANSACTION;
     SELECT fn_conta_emprestimos_ativos(NEW.id_usuario) INTO empresitmos_ativos;
     SELECT limite_emprestimos INTO tg_limite_emprestimos FROM usuarios WHERE id_usuario = NEW.id_usuario;
     SELECT disponivel INTO disponibilidade_livro FROM exemplar_fisico WHERE id_fisico = NEW.id_fisico;
