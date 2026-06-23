@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS emprestimos (
     id_fisico INT NOT NULL,
     data_emprestimo DATE NOT NULL,
     data_devolucao DATE NOT NULL,
+    devolvido BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
     FOREIGN KEY (id_fisico) REFERENCES exemplar_fisico(id_fisico)
 );
