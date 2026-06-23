@@ -52,3 +52,38 @@ BEGIN
     END IF;
 END
 ---
+
+-- Trigger de emprestimo
+---
+CREATE TRIGGER IF NOT EXISTS tg_emprestimo
+BEFORE INSERT ON emprestimos
+FOR EACH ROW
+BEGIN
+    SET autocommit = 0;
+    START TRANSACTION;
+    DECLARE empresitmos_ativos INT;
+    DECLARE t_limite_emprestimos INT;
+    DECLARE disponibilidade_livro BOOLEAN;
+
+    SELECT fn_conta_emprestimos_ativos(NEW.id_usuario) INTO empresitmos_ativos;
+    SELECT limite_emprestimos INTO tg_limite_emprestimos FROM usuarios WHERE id_usuario = NEW.id_usuario;
+    SELECT disponivel INTO disponibilidade_livro FROM exemplar_fisico WHERE id_fisico = NEW.id_fisico;
+
+    -- Vefifica se o livro não está disponível
+    IF disponibilidade_livro = FALSE THEN
+        ROLLBACK;
+    END IF;
+
+    -- verificar se o usuario pode fazer o emprestimo
+    IF empresitmos_ativos >= t_limite_emprestimos THEN
+        ROLLBACK;
+    ELSE THEN
+        -- colocar disponivel no exemplar fisico como false
+        UPDATE exemplar_fisico SET disponivel = FALSE WHERE id_fisico = NEW.id_fisico;
+    END IF;
+
+    SET NEW.data_emprestimo = CURDATE();
+    SET NEW.data_devolucao = DATE_ADD(CURDATE(), INTERVAL 20 DAY);
+    COMMIT;
+END
+---
