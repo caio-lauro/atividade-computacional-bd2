@@ -1,6 +1,6 @@
 from datetime import date
 from enum import Enum
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class PessoaSchema(BaseModel):
@@ -68,6 +68,7 @@ class LivroSchema(BaseModel):
     ISBN: str
     data_publicacao: date
     titulo: str
+    autores: list[int] = Field(min_length=1)
 
 
 class ExemplarDigitalSchema(LivroSchema):
@@ -75,10 +76,14 @@ class ExemplarDigitalSchema(LivroSchema):
     URL: str
 
 
-class AtualizarExemplarDigitalSchema(BaseModel):
+class _AtualizarLivroSchema(BaseModel):
     ISBN: str | None = None
     data_publicacao: date | None = None
     titulo: str | None = None
+    autores: list[int] = []
+
+
+class AtualizarExemplarDigitalSchema(_AtualizarLivroSchema):
     acessos: int | None = None
     URL: str | None = None
 
@@ -92,9 +97,6 @@ class StatusExemplarFisico(str, Enum):
     indisponivel = 'indisponível'
 
 
-class AtualizarExemplarFisicoSchema(BaseModel):
-    ISBN: str | None = None
-    data_publicacao: date | None = None
-    titulo: str | None = None
+class AtualizarExemplarFisicoSchema(_AtualizarLivroSchema):
     status: StatusExemplarFisico | None = None
     estante: str | None = None

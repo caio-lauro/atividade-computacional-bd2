@@ -1,14 +1,14 @@
 from http import HTTPStatus
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Query
 from mysql.connector import errors as mysql_errors
 
 from db import db_fetch_one, db_fetch_all, db_insert, db_modify
 from schemas import ExemplarFisicoSchema, StatusExemplarFisico, AtualizarExemplarFisicoSchema
 from db_schemas import ExemplarFisicoDBSchema
-from utils import criar_livro, buscar_estante
+from utils import criar_livro, buscar_estante, buscar_autores_inexistentes, adicionar_autores_a_livro
 
 
-router = APIRouter(prefix='/livros/fisico', tags=['Exemplar Físico'])
+router = APIRouter(prefix='/livros/fisico', tags=['Livro Físico'])
 
 
 @router.get('/', response_model=list[ExemplarFisicoDBSchema])
@@ -17,7 +17,8 @@ def ler_livro_fisico(
     ISBN: str | None = None,
     titulo: str | None = None,
     status: StatusExemplarFisico | None = None,
-    estante: str | None = None
+    estante: str | None = None,
+    autores: list[str] | None = Query(default=None)
 ):
     conditions = []
     params = []
@@ -42,6 +43,15 @@ def ler_livro_fisico(
         conditions.append('Estante = %s')
         params.append(estante)
 
+    if autores:
+        likes = ' OR '.join(['a.nome LIKE %s'] * len(autores))
+        conditions.append(
+            'view_fisico.id IN (SELECT al.id_livro FROM autores_livros al '
+            'INNER JOIN autores a ON al.id_autor=a.id ' 
+            f'WHERE {likes})'
+        )
+        params.extend([f'%{autor}%' for autor in autores])
+
     where = '' if not conditions else 'WHERE ' + ' AND '.join(conditions)
     fetch = db_fetch_all(
         'SELECT * FROM view_fisico '
@@ -60,6 +70,14 @@ def ler_livro_fisico(
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_livro_fisico(livro_fisico: ExemplarFisicoSchema):
     try:
+        autor_inexistente = buscar_autores_inexistentes(livro_fisico.autores)
+        if autor_inexistente != -1:
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f'Nenhum autor(a) com o ID {autor_inexistente} foi encontrado(a).'
+            )
+        
+
         id_estante = buscar_estante(livro_fisico.estante)
         if not id_estante:
             raise HTTPException(
@@ -85,6 +103,9 @@ def criar_livro_fisico(livro_fisico: ExemplarFisicoSchema):
             'INSERT INTO exemplar_fisico (id_fisico, id_estante_associada) VALUES (%s, %s)',
             (id, id_estante)
         )
+
+        adicionar_autores_a_livro(id, livro_fisico.autores)
+
         return id
     except mysql_errors.IntegrityError:
         raise HTTPException(
@@ -116,15 +137,33 @@ def atualizar_livro_fisico(
 
     data = livro_fisico.model_dump(exclude_none=True)
 
-    livros_fields = {'ISBN', 'titulo', 'data_publicacao'}
+    livros_fields = {'ISBN', 'titulo', 'data_publicacao', 'autores'}
     livros_data = {k: v for k, v in data.items() if k in livros_fields}
 
     rows = 0
+    if 'autores' in livros_data:
+        # Garantir que autores são existentes
+        autor_inexistente = buscar_autores_inexistentes(livro_fisico.autores)
+        if autor_inexistente != -1:
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f'Nenhum autor(a) com o ID {autor_inexistente} foi encontrado(a).'
+            )
+        
+        rows = db_modify(
+            'DELETE FROM autores_livros WHERE id_livro = %s', 
+            (id_livro_fisico,)
+        )
+
+        rows += adicionar_autores_a_livro(id_livro_fisico, livro_fisico.autores)
+
+        del livros_data['autores']
+
     if livros_data:
         fields = [f'{k} = %s' for k in livros_data]
         params = list(livros_data.values()) + [id_livro_fisico]
         try:
-            rows = db_modify(
+            rows += db_modify(
                 f'UPDATE livros SET {', '.join(fields)} WHERE id = %s', params)
         except mysql_errors.IntegrityError:
             raise HTTPException(
@@ -196,6 +235,10 @@ def deletar_livro_fisico(id_livro_fisico: int):
 
     rows = db_modify(
         'DELETE FROM exemplar_fisico WHERE id_fisico = %s', (id_livro_fisico,)
+    )
+
+    rows += db_modify(
+        'DELETE FROM autores_livros WHERE id_livro = %s', (id_livro_fisico,)
     )
 
     rows += db_modify(

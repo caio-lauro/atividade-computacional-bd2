@@ -31,6 +31,7 @@ class _LivroDBSchema(BaseModel):
     ISBN: str
     titulo: str
     data_publicacao: date
+    autores: list[str]
 
 
 class ExemplarDigitalDBSchema(_LivroDBSchema):

@@ -23,6 +23,26 @@ def criar_livro(livro: LivroSchema) -> int:
     )
 
 
+def buscar_autores_inexistentes(autores: list[int]) -> int:
+    for id_autor in autores:
+        if not db_fetch_one(
+            'SELECT id FROM autores WHERE id = %s',
+            (id_autor,)
+        ):
+            return id_autor
+    return -1
+
+
+def adicionar_autores_a_livro(id_livro: int, autores: list[int]) -> int:
+    rows = 0
+    for id_autor in autores:
+        rows += db_insert(
+            'INSERT INTO autores_livros (id_autor, id_livro) '
+            'VALUES (%s, %s)',
+            (id_autor, id_livro)
+        )
+
+
 def buscar_estante(identificador_fisico: str) -> dict:
     id = db_fetch_one(
         'SELECT id FROM estantes WHERE identificador_fisico = %s',
