@@ -11,7 +11,7 @@ END
 
 -- Função que retorna a quantidade de emprestimos ativos de um usuário
 ---
-CREATE FUNCTION IF NOT EXISTS fn_conta_emprestimos_ativos(f_id_usuario INT)
+CREATE FUNCTION IF NOT EXISTS fn_conta_emprestimos_ativos(f_id_usuario INT) RETURNS INT
 DETERMINISTIC
 BEGIN
     DECLARE cont_ativos INT;
