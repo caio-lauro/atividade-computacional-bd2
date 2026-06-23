@@ -1,6 +1,6 @@
 from datetime import date
 from enum import Enum
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, NonNegativeInt, HttpUrl
 
 
 class PessoaSchema(BaseModel):
@@ -74,8 +74,8 @@ class LivroSchema(BaseModel):
 
 
 class ExemplarDigitalSchema(LivroSchema):
-    acessos: int
-    URL: str
+    numero_acessos: NonNegativeInt = 0
+    URL: HttpUrl
 
 
 class _AtualizarLivroSchema(BaseModel):
@@ -86,8 +86,8 @@ class _AtualizarLivroSchema(BaseModel):
 
 
 class AtualizarExemplarDigitalSchema(_AtualizarLivroSchema):
-    acessos: int | None = None
-    URL: str | None = None
+    numero_acessos: NonNegativeInt | None = None
+    URL: HttpUrl | None = None
 
 
 class ExemplarFisicoSchema(LivroSchema):

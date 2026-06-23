@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, NonNegativeInt, HttpUrl
 from schemas import AutorSchema
 
 
@@ -38,8 +38,8 @@ class _LivroDBSchema(BaseModel):
 
 
 class ExemplarDigitalDBSchema(_LivroDBSchema):
-    acessos: int
-    URL: str
+    numero_acessos: NonNegativeInt
+    URL: HttpUrl
 
 
 class ExemplarFisicoDBSchema(_LivroDBSchema):
