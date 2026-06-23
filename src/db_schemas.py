@@ -24,3 +24,21 @@ class FuncionarioDBSchema(_PessoaDBSchema):
 
 class EstanteDBSchema(EstanteSchema):
     id: int
+
+
+class _LivroDBSchema(BaseModel):
+    id: int
+    ISBN: str
+    titulo: str
+    data_publicacao: date
+
+
+class ExemplarDigitalDBSchema(_LivroDBSchema):
+    acessos: int
+    URL: str
+
+
+class ExemplarFisicoDBSchema(_LivroDBSchema):
+    disponivel: bool
+    Estante: str
+
