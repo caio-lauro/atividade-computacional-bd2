@@ -1,7 +1,7 @@
 from difflib import get_close_matches
 from fastapi import HTTPException
 
-from schemas import PessoaSchema, LivroSchema
+from schemas import PessoaSchema, LivroSchema, AtualizarLivroSchema
 from db import db_insert, db_fetch_all, db_fetch_one
 from auth import hash_senha
 
@@ -15,8 +15,8 @@ def criar_pessoa(pessoa: PessoaSchema) -> int:
     )
 
 
-def criar_livro(livro: LivroSchema) -> int:
-    return db_insert(
+def stmt_criar_livro(livro: LivroSchema) -> tuple[str, tuple]:
+    return(
         'INSERT INTO livros (ISBN, titulo, data_publicacao) '
         'VALUES (%s, %s, %s)',
         (livro.ISBN, livro.titulo, livro.data_publicacao)
@@ -33,14 +33,48 @@ def buscar_autores_inexistentes(autores: list[int]) -> int:
     return -1
 
 
-def adicionar_autores_a_livro(id_livro: int, autores: list[int]) -> int:
-    rows = 0
+def stmts_adicionar_autores_a_livro(id_livro: int, autores: list[int]) -> list[tuple[str, tuple]]:
+    stmts = []
     for id_autor in autores:
-        rows += db_insert(
+        stmts.append((
             'INSERT INTO autores_livros (id_autor, id_livro) '
             'VALUES (%s, %s)',
             (id_autor, id_livro)
-        )
+        ))
+    return stmts
+
+
+def stmts_atualizar_livro(id_livro: int, livro: AtualizarLivroSchema) -> list[tuple[str, tuple]]:
+    fields = []
+    params = []
+
+    if livro.ISBN:
+        fields.append('ISBN = %s')
+        params.append(livro.ISBN)
+    
+    if livro.data_publicacao:
+        fields.append('data_publicacao = %s')
+        params.append(livro.data_publicacao)
+
+    if livro.titulo:
+        fields.append('titulo = %s')
+        params.append(livro.titulo)
+
+    if not fields:
+        return []
+
+    params.append(id_livro)
+    stmts = [(f'UPDATE livros SET {','.join(fields)} WHERE id = %s', params)]
+
+    if livro.autores:
+        stmts.append((
+            'DELETE FROM autores_livros WHERE id_livro = %s',
+            (id_livro,)
+        ))
+        
+        stmts.extend(stmts_adicionar_autores_a_livro(id_livro, livro.autores))
+
+    return stmts
 
 
 def buscar_estante(identificador_fisico: str) -> dict:

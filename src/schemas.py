@@ -78,14 +78,14 @@ class ExemplarDigitalSchema(LivroSchema):
     URL: HttpUrl
 
 
-class _AtualizarLivroSchema(BaseModel):
+class AtualizarLivroSchema(BaseModel):
     ISBN: str | None = None
     data_publicacao: date | None = None
     titulo: str | None = None
     autores: list[int] = []
 
 
-class AtualizarExemplarDigitalSchema(_AtualizarLivroSchema):
+class AtualizarExemplarDigitalSchema(AtualizarLivroSchema):
     numero_acessos: NonNegativeInt | None = None
     URL: HttpUrl | None = None
 
@@ -99,7 +99,7 @@ class StatusExemplarFisico(str, Enum):
     indisponivel = 'indisponível'
 
 
-class AtualizarExemplarFisicoSchema(_AtualizarLivroSchema):
+class AtualizarExemplarFisicoSchema(AtualizarLivroSchema):
     status: StatusExemplarFisico | None = None
     estante: str | None = None
 

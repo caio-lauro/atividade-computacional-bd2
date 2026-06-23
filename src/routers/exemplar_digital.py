@@ -2,10 +2,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response, Query
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_insert, db_modify, db_transaction
+from db import db_fetch_one, db_fetch_all, db_transaction
 from schemas import ExemplarDigitalSchema, AtualizarExemplarDigitalSchema
 from db_schemas import ExemplarDigitalDBSchema
-from utils import criar_livro, buscar_autores_inexistentes, adicionar_autores_a_livro
+from utils import stmt_criar_livro, buscar_autores_inexistentes, stmts_adicionar_autores_a_livro, stmts_atualizar_livro
 
 
 router = APIRouter(prefix='/livros/digital', tags=['Livro Digital'])
@@ -42,7 +42,7 @@ def ler_livro_digital(
         likes = ' OR '.join(['a.nome LIKE %s'] * len(autores))
         conditions.append(
             'view_digital.id IN (SELECT al.id_livro FROM autores_livros al '
-            'INNER JOIN autores a ON al.id_autor=a.id ' 
+            'INNER JOIN autores a ON al.id_autor=a.id '
             f'WHERE {likes})'
         )
         params.extend([f'%{autor}%' for autor in autores])
@@ -59,7 +59,7 @@ def ler_livro_digital(
             HTTPStatus.NOT_FOUND,
             'Nenhum exemplar digital com esses critérios foi encontrado.'
         )
-    
+
     for i in fetch:
         i['autores'] = i['autores'].split(', ')
 
@@ -76,15 +76,15 @@ def criar_livro_digital(livro_digital: ExemplarDigitalSchema):
                 f'Nenhum autor(a) com o ID {autor_inexistente} foi encontrado(a).'
             )
 
-        id = criar_livro(livro_digital)
-        db_insert(
+        stmts = [stmt_criar_livro(livro_digital)]
+        stmts.append((
             'INSERT INTO exemplar_digital (id_digital, numero_acessos, URL) VALUES (%s, %s, %s)',
             (id, livro_digital.numero_acessos, str(livro_digital.URL))
-        )
+        ))
 
-        adicionar_autores_a_livro(id, livro_digital.autores)
+        stmts.extend(stmts_adicionar_autores_a_livro(id, livro_digital.autores))
 
-        return id
+        return db_transaction(stmts)[0]
     except mysql_errors.IntegrityError:
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="ISBN ou URL já cadastrado(s)")
@@ -96,7 +96,7 @@ def criar_livro_digital(livro_digital: ExemplarDigitalSchema):
 @router.put('/{id_livro_digital}', response_model=int)
 def atualizar_livro_digital(
     id_livro_digital: int,
-    livro_fisico: AtualizarExemplarDigitalSchema,
+    livro_digital: AtualizarExemplarDigitalSchema,
     response: Response
 ):
     # Buscar livro e exemplar digital para ver se existe
@@ -110,71 +110,35 @@ def atualizar_livro_digital(
             'Nenhum livro com esse ID foi encontrado.'
         )
 
+    stmts = stmts_atualizar_livro(id_livro_digital, livro_digital)
+
     fields = []
     params = []
 
-    data = livro_fisico.model_dump(exclude_none=True)
+    if livro_digital.numero_acessos:
+        fields.append('numero_acessos = %s')
+        params.append(livro_digital.numero_acessos)
 
-    livros_fields = {'ISBN', 'titulo', 'data_publicacao', 'autores'}
-    livros_data = {k: v for k, v in data.items() if k in livros_fields}
+    if livro_digital.URL:
+        fields.append('URL = %s')
+        params.append(str(livro_digital.URL))
 
-    rows = 0
-    if 'autores' in livros_data:
-        # Garantir que autores são existentes
-        autor_inexistente = buscar_autores_inexistentes(livro_fisico.autores)
-        if autor_inexistente != -1:
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND,
-                f'Nenhum autor(a) com o ID {autor_inexistente} foi encontrado(a).'
-            )
-        
-        rows = db_modify(
-            'DELETE FROM autores_livros WHERE id_livro = %s', 
-            (id_livro_digital,)
-        )
+    if fields:
+        params.append(id_livro_digital)
+        stmts.append((
+            f'UPDATE exemplar_digital SET {','.join(fields)} WHERE id_digital = %s', 
+            params
+        ))
 
-        rows += adicionar_autores_a_livro(id_livro_digital, livro_fisico.autores)
-
-        del livros_data['autores']
-
-    if livros_data:
-        fields = [f'{k} = %s' for k in livros_data]
-        params = list(livros_data.values()) + [id_livro_digital]
-        try:
-            rows += db_modify(
-                f'UPDATE livros SET {', '.join(fields)} WHERE id = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="ISBN já cadastrado")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    digital_fields = {'numero_acessos', 'URL'}
-    digital_data = {k: v for k, v in data.items() if k in digital_fields}
-
-    if digital_data:
-        fields = [f'{k} = %s' for k in digital_data]
-        params = list(digital_data.values()) + [id_livro_digital]
-        try:
-            rows += db_modify(
-                f'UPDATE exemplar_digital SET {', '.join(fields)} WHERE id_fisico = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="URL já cadastrada")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    if rows == 0:
+    if not stmts:
         response.status_code = HTTPStatus.NO_CONTENT
 
-    return rows
+    return sum(db_transaction(stmts))
 
 
 @router.delete('/{id_livro_digital}', response_model=int)
-def deletar_livro_fisico(id_livro_digital: int):
-    # Buscar livro e exemplar físico para ver se existe
+def deletar_livro_digital(id_livro_digital: int):
+    # Buscar livro e exemplar digital para ver se existe
     if db_fetch_one('SELECT id FROM livros WHERE id = %s', (id_livro_digital,)) is None \
         or db_fetch_one(
             'SELECT id_digital FROM exemplar_digital WHERE id_digital = %s',
@@ -184,7 +148,7 @@ def deletar_livro_fisico(id_livro_digital: int):
             HTTPStatus.NOT_FOUND,
             'Nenhum livro com esse ID foi encontrado.'
         )
-    
+
     return sum(db_transaction([
         ('DELETE FROM exemplar_digital WHERE id_digital = %s', (id_livro_digital,)),
         ('DELETE FROM autores_livros WHERE id_livro = %s', (id_livro_digital,)),
