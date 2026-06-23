@@ -31,7 +31,7 @@ CREATE OR REPLACE VIEW view_fisico AS
 
 -- View que contém todas as informações de um dado livro digital
 
-CREATE OR REPLACE VIEW view_fisico AS
+CREATE OR REPLACE VIEW view_digital AS
     SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, 
     d.numero_acessos, d.URL
     FROM livros l INNER JOIN exemplar_digital d
