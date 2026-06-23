@@ -19,3 +19,18 @@ BEGIN
     RETURN cont_ativos;
 END 
 ---
+
+-- Função que retorna a quantidade de espaços disponíveis em uma estante
+---
+CREATE FUNCTION IF NOT EXISTS fn_calcular_espacos_disponiveis(f_id_estante INT) RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE disponivel INT;
+    SELECT e.capacidade - COUNT(ef.id_fisico) INTO disponivel
+    FROM estantes e
+    LEFT JOIN exemplar_fisico ef ON e.id = ef.id_estante_associada
+    LEFT JOIN livros l ON ef.id_fisico = l.id
+    GROUP BY e.identificador_fisico, e.capacidade;
+    RETURN disponivel;
+END
+---
