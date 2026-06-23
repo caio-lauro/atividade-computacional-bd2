@@ -18,12 +18,24 @@ CREATE OR REPLACE VIEW view_funcionario AS
     ON f.id_cargo=c.id;
 
 
+-- View que contém todas as informações de um dado livro e seus autores
+CREATE OR REPLACE VIEW view_livro AS
+    SELECT l.id, l.ISBN, l.titulo, l.data_publicacao,
+    GROUP_CONCAT(a.nome ORDER BY a.nome SEPARATOR ', ') AS autores
+    FROM livros l 
+    INNER JOIN autores_livros al
+    ON l.id=al.id_livro
+    INNER JOIN autores a
+    ON a.id=al.id_autor
+    GROUP BY l.id, l.ISBN, l.titulo, l.data_publicacao;
+
+
 -- View que contém todas as informações de um dado livro físico
 
 CREATE OR REPLACE VIEW view_fisico AS
-    SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, 
+    SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, l.autores,
     f.disponivel, e.identificador_fisico Estante
-    FROM livros l INNER JOIN exemplar_fisico f
+    FROM view_livro l INNER JOIN exemplar_fisico f
     ON l.id=f.id_fisico 
     INNER JOIN estantes e
     ON f.id_estante_associada=e.id;
@@ -32,7 +44,7 @@ CREATE OR REPLACE VIEW view_fisico AS
 -- View que contém todas as informações de um dado livro digital
 
 CREATE OR REPLACE VIEW view_digital AS
-    SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, 
+    SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, l.autores,
     d.numero_acessos, d.URL
-    FROM livros l INNER JOIN exemplar_digital d
+    FROM view_livro l INNER JOIN exemplar_digital d
     ON l.id=d.id_digital;
