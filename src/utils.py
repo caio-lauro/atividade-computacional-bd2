@@ -1,8 +1,8 @@
 from difflib import get_close_matches
 from fastapi import HTTPException
 
-from schemas import PessoaSchema
-from db import db_insert, db_fetch_all
+from schemas import PessoaSchema, LivroSchema
+from db import db_insert, db_fetch_all, db_fetch_one
 from auth import hash_senha
 
 
@@ -10,9 +10,26 @@ def criar_pessoa(pessoa: PessoaSchema) -> int:
     return db_insert(
         'INSERT INTO pessoas (nome, CPF, email, senha, telefone, data_nascimento) '
         'VALUES (%s, %s, %s, %s, %s, %s)',
-        (pessoa.nome, pessoa.CPF.replace('-', ''), pessoa.email,
+        (pessoa.nome, pessoa.CPF.replace('-', '').replace('.'), pessoa.email,
          hash_senha(pessoa.senha), pessoa.telefone.replace('-', ''), pessoa.data_nascimento)
     )
+
+
+def criar_livro(livro: LivroSchema) -> int:
+    return db_insert(
+        'INSERT INTO livros (ISBN, titulo, data_publicacao) '
+        'VALUES (%s, %s, %s)',
+        (livro.ISBN, livro.titulo, livro.data_publicacao)
+    )
+
+
+def buscar_estante(identificador_fisico: str) -> dict:
+    id = db_fetch_one(
+        'SELECT id FROM estantes WHERE identificador_fisico = %s',
+        (identificador_fisico,)
+    )
+
+    return id
 
 
 def resolver_cargo(cargo: int | str) -> int:
