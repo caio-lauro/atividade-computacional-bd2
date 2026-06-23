@@ -1,7 +1,7 @@
 from difflib import get_close_matches
 from fastapi import HTTPException
 
-from schemas import PessoaSchema, LivroSchema, AtualizarLivroSchema
+from schemas import PessoaSchema, LivroSchema, AtualizarLivroSchema, AtualizarPessoaSchema
 from db import db_fetch_all, db_fetch_one
 from auth import hash_senha
 
@@ -42,6 +42,44 @@ def stmts_adicionar_autores_a_livro(id_livro: int, autores: list[int]) -> list[t
             (id_autor, id_livro)
         ))
     return stmts
+
+
+def stmt_atualizar_pessoa(id_pessoa: int, pessoa: AtualizarPessoaSchema) -> tuple[str, tuple]:
+    fields = []
+    params = []
+
+    if pessoa.nome:
+        fields.append('nome = %s')
+        params.append(pessoa.nome)
+
+    if pessoa.CPF:
+        fields.append('CPF = %s')
+        params.append(pessoa.CPF)
+
+    if pessoa.email:
+        fields.append('email = %s')
+        params.append(pessoa.email)
+
+    if pessoa.senha:
+        fields.append('senha = %s')
+        params.append(hash_senha(pessoa.senha))
+
+    if pessoa.telefone:
+        fields.append('telefone = %s')
+        params.append(pessoa.telefone)
+
+    if pessoa.data_nascimento:
+        fields.append('data_nascimento = %s')
+        params.append(pessoa.data_nascimento)
+
+    if not fields:
+        return []
+    
+    params.append(id_pessoa)
+    return (
+        f'UPDATE pessoas SET {','.join(fields)} WHERE id = %s',
+        params
+    )
 
 
 def stmts_atualizar_livro(id_livro: int, livro: AtualizarLivroSchema) -> list[tuple[str, tuple]]:

@@ -3,11 +3,10 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from mysql.connector import errors as mysql_errors
 from typing import Annotated
 
-from db import db_fetch_one, db_fetch_all, db_modify, get_connection
+from db import db_fetch_one, db_fetch_all, get_connection, db_transaction
 from schemas import FuncionarioSchema, CargoFuncionario, AtualizarFuncionarioSchema
 from db_schemas import FuncionarioDBSchema
-from utils import cursor_criar_pessoa, resolver_cargo
-from auth import hash_senha
+from utils import cursor_criar_pessoa, resolver_cargo, stmt_atualizar_pessoa
 
 
 router = APIRouter(prefix='/funcionario', tags=['Funcionários'])
@@ -62,13 +61,21 @@ def ler_funcionarios(
 
 @router.get('/estantes', response_model=list[dict])
 def ler_estantes_encarregadas(id_funcionario: int):
-    return db_fetch_all(
+    fetch = db_fetch_all(
         'SELECT e.id, e.identificador_fisico FROM '
         'estantes e INNER JOIN organizadores_estantes o '
         'ON e.id=o.id_estante '
         'WHERE o.id_funcionario = %s',
         (id_funcionario,)
     )
+
+    if not fetch:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND,
+            'Esse funcionário não existe, ou não está encarregado de nenhuma estante.'
+        )
+
+    return fetch
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
@@ -98,6 +105,9 @@ def criar_funcionario(funcionario: FuncionarioSchema):
         conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @router.put('/{id_funcionario}', response_model=int)
@@ -117,58 +127,31 @@ def atualizar_funcionario(
             'Nenhum funcionário com esse ID foi encontrado.'
         )
 
+    stmts = [stmt_atualizar_pessoa(id_funcionario, funcionario)]
+
     fields = []
     params = []
 
-    data = funcionario.model_dump(exclude_none=True)
+    if funcionario.cargo:
+        id_cargo = resolver_cargo(funcionario.cargo)
+        fields.append('id_cargo = %s')
+        params.append(id_cargo)
 
-    pessoa_fields = {'nome', 'CPF', 'email',
-                     'senha', 'telefone', 'data_nascimento'}
-    pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
+    if funcionario.data_contratacao:
+        fields.append('data_contratacao = %s')
+        params.append(funcionario.data_contratacao)
 
-    if 'senha' in pessoas_data:
-        pessoas_data['senha'] = hash_senha(pessoas_data['senha'])
+    if fields:
+        params.append(id_funcionario)
+        stmts.append((
+            f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', 
+            params
+        ))                
 
-    rows = 0
-    if pessoas_data:
-        fields = [f'{k} = %s' for k in pessoas_data]
-        params = list(pessoas_data.values()) + [id_funcionario]
-        try:
-            rows = db_modify(
-                f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    funcionarios_fields = {'cargo', 'data_contratacao'}
-    funcionarios_data = {k: v for k,
-                         v in data.items() if k in funcionarios_fields}
-
-    if 'cargo' in funcionarios_data:
-        cargo = funcionarios_data['cargo']
-        del funcionarios_data['cargo']
-        funcionarios_data['id_cargo'] = resolver_cargo(cargo)
-
-    if funcionarios_data:
-        fields = [f'{k} = %s' for k in funcionarios_data]
-        params = list(funcionarios_data.values()) + [id_funcionario]
-        try:
-            rows += db_modify(
-                f'UPDATE funcionarios SET {', '.join(fields)} WHERE id_funcionario = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    if rows == 0:
+    if not stmts:
         response.status_code = HTTPStatus.NO_CONTENT
 
-    return rows
+    return sum(db_transaction(stmts))
 
 
 @router.delete('/funcinario/{id_funcionario}', response_model=int)
@@ -183,13 +166,8 @@ def deletar_funcionario(id_funcionario: int):
             HTTPStatus.NOT_FOUND,
             'Nenhum funcionário com esse ID foi encontrado.'
         )
-
-    rows = db_modify(
-        'DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)
-    )
-
-    rows += db_modify(
-        'DELETE FROM pessoas WHERE id = %s', (id_funcionario,)
-    )
-
-    return rows
+    
+    return sum(db_transaction([
+        ('DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)),
+        ('DELETE FROM pessoas WHERE id = %s', (id_funcionario,))
+    ]))

@@ -12,7 +12,7 @@ class PessoaSchema(BaseModel):
     data_nascimento: date
 
 
-class _AtualizarPessoaSchema(BaseModel):
+class AtualizarPessoaSchema(BaseModel):
     nome: str | None = None
     CPF: str | None = None
     email: EmailStr | None = None
@@ -30,9 +30,9 @@ class StatusUsuario(str, Enum):
     inativo = 'inativo'
 
 
-class AtualizarUsuarioSchema(_AtualizarPessoaSchema):
+class AtualizarUsuarioSchema(AtualizarPessoaSchema):
     status: StatusUsuario | None = None
-    limite_emprestimos: int | None = None
+    limite_emprestimos: NonNegativeInt | None = None
 
 
 class FuncionarioSchema(PessoaSchema):
@@ -40,7 +40,7 @@ class FuncionarioSchema(PessoaSchema):
     data_contratacao: date | None = None
 
 
-class AtualizarFuncionarioSchema(_AtualizarPessoaSchema):
+class AtualizarFuncionarioSchema(AtualizarPessoaSchema):
     cargo: int | str | None = None
     data_contratacao: date | None = None
 
@@ -56,13 +56,13 @@ CargoFuncionario = criar_enum_cargos()
 
 class EstanteSchema(BaseModel):
     identificador_fisico: str
-    capacidade: int
+    capacidade: NonNegativeInt
     funcionarios_responsaveis: list[int] = Field(min_length=1)
 
 
 class AtualizarEstanteSchema(BaseModel):
     identificador_fisico: str | None = None
-    capacidade: int | None = None
+    capacidade: NonNegativeInt | None = None
     funcionarios_responsaveis: list[int] = []
 
 

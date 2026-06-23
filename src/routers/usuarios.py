@@ -2,11 +2,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_modify, get_connection
+from db import db_fetch_one, db_fetch_all, get_connection, db_transaction
 from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema
 from db_schemas import UsuarioDBSchema
-from utils import cursor_criar_pessoa
-from auth import hash_senha
+from utils import cursor_criar_pessoa, stmt_atualizar_pessoa
 
 
 router = APIRouter(prefix='/usuario', tags=['Usuários'])
@@ -104,52 +103,30 @@ def atualizar_usuario(
             'Nenhum usuário com esse ID foi encontrado.'
         )
 
+    stmts = [stmt_atualizar_pessoa(id_usuario, usuario)]
+
     fields = []
     params = []
 
-    data = usuario.model_dump(exclude_none=True)
+    if usuario.status:
+        fields.append('status = %s')
+        params.append(usuario.status == 'ativo')
 
-    pessoa_fields = {'nome', 'CPF', 'email',
-                     'senha', 'telefone', 'data_nascimento'}
-    pessoas_data = {k: v for k, v in data.items() if k in pessoa_fields}
+    if usuario.limite_emprestimos is not None:
+        fields.append('limite_emprestimos = %s')
+        params.append(usuario.limite_emprestimos)
 
-    if 'senha' in pessoas_data:
-        pessoas_data['senha'] = hash_senha(pessoas_data['senha'])
+    if fields:
+        params.append(id_usuario)
+        stmts.append((
+            f'UPDATE usuarios SET {','.join(fields)} WHERE id_usuario = %s',
+            params
+        ))
 
-    rows = 0
-    if pessoas_data:
-        fields = [f'{k} = %s' for k in pessoas_data]
-        params = list(pessoas_data.values()) + [id_usuario]
-        try:
-            rows = db_modify(
-                f'UPDATE pessoas SET {', '.join(fields)} WHERE id = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    usuario_fields = {'status', 'limite_emprestimos'}
-    usuarios_data = {k: v for k, v in data.items() if k in usuario_fields}
-
-    if usuarios_data:
-        fields = [f'{k} = %s' for k in usuarios_data]
-        params = list(usuarios_data.values()) + [id_usuario]
-        try:
-            rows += db_modify(
-                f'UPDATE usuarios SET {', '.join(fields)} WHERE id_usuario = %s', params)
-        except mysql_errors.IntegrityError:
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
-        except mysql_errors.Error as e:
-            raise HTTPException(
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
-
-    if rows == 0:
+    if not stmts:
         response.status_code = HTTPStatus.NO_CONTENT
 
-    return rows
+    return sum(db_transaction(stmts))
 
 
 @router.delete('/{id_usuario}', response_model=int)
@@ -165,12 +142,7 @@ def deletar_usuario(id_usuario: int):
             'Nenhum usuário com esse ID foi encontrado.'
         )
 
-    rows = db_modify(
-        'DELETE FROM usuarios WHERE id_usuario = %s', (id_usuario,)
-    )
-
-    rows += db_modify(
-        'DELETE FROM pessoas WHERE id = %s', (id_usuario,)
-    )
-
-    return rows
+    return sum(db_transaction([
+        ('DELETE FROM usuarios WHERE id_usuario = %s', (id_usuario,)),
+        ('DELETE FROM pessoas WHERE id = %s', (id_usuario,))
+    ]))
