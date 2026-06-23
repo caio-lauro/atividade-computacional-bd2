@@ -64,6 +64,10 @@ def ler_livro_fisico(
             HTTPStatus.NOT_FOUND,
             'Nenhum exemplar físico com esses critérios foi encontrado.'
         )
+    
+    for i in fetch:
+        i['autores'] = i['autores'].split(', ')
+
     return fetch
 
 
