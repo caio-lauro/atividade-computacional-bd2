@@ -10,7 +10,11 @@ def run_sql_file(cursor, path: str, separator: str = ';'):
     with open(file=path, mode='r', encoding='utf-8') as fp:
         for stmt in fp.read().split(separator):
             if stmt.strip():
-                cursor.execute(stmt)
+                try:
+                    cursor.execute(stmt)
+                except Exception as e:
+                    log_error(f'Erro no statement:\n{stmt}\nErro: {e}')
+                    raise
 
 
 def init_db():
