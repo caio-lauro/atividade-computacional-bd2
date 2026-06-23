@@ -2,10 +2,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response, Query
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_transaction
+from db import db_fetch_one, db_fetch_all, db_transaction, get_connection
 from schemas import ExemplarDigitalSchema, AtualizarExemplarDigitalSchema
 from db_schemas import ExemplarDigitalDBSchema
-from utils import stmt_criar_livro, buscar_autores_inexistentes, stmts_adicionar_autores_a_livro, stmts_atualizar_livro
+from utils import cursor_criar_livro, buscar_autores_inexistentes, stmts_adicionar_autores_a_livro, stmts_atualizar_livro
 
 
 router = APIRouter(prefix='/livros/digital', tags=['Livro Digital'])
@@ -68,6 +68,8 @@ def ler_livro_digital(
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_livro_digital(livro_digital: ExemplarDigitalSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
         autor_inexistente = buscar_autores_inexistentes(livro_digital.autores)
         if autor_inexistente != -1:
@@ -76,21 +78,31 @@ def criar_livro_digital(livro_digital: ExemplarDigitalSchema):
                 f'Nenhum autor(a) com o ID {autor_inexistente} foi encontrado(a).'
             )
 
-        stmts = [stmt_criar_livro(livro_digital)]
-        stmts.append((
+        cursor_criar_livro(cursor, livro_digital)
+        id_livro_digital = cursor.lastrowid
+
+        cursor.execute(
             'INSERT INTO exemplar_digital (id_digital, numero_acessos, URL) VALUES (%s, %s, %s)',
-            (id, livro_digital.numero_acessos, str(livro_digital.URL))
-        ))
+            (id_livro_digital, livro_digital.numero_acessos, str(livro_digital.URL))
+        )
 
-        stmts.extend(stmts_adicionar_autores_a_livro(id, livro_digital.autores))
+        for sql, params in stmts_adicionar_autores_a_livro(id_livro_digital, livro_digital.autores):
+            cursor.execute(sql, params)
 
-        return db_transaction(stmts)[0]
+        conn.commit()
+
+        return id_livro_digital
     except mysql_errors.IntegrityError:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="ISBN ou URL já cadastrado(s)")
     except mysql_errors.Error as e:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @router.put('/{id_livro_digital}', response_model=int)

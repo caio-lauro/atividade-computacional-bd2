@@ -2,10 +2,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response, Query
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_modify, db_transaction
+from db import db_fetch_one, db_fetch_all, db_transaction, get_connection
 from schemas import ExemplarFisicoSchema, StatusExemplarFisico, AtualizarExemplarFisicoSchema
 from db_schemas import ExemplarFisicoDBSchema
-from utils import stmt_criar_livro, buscar_estante, buscar_autores_inexistentes, stmts_adicionar_autores_a_livro, stmts_atualizar_livro
+from utils import cursor_criar_livro, buscar_estante, buscar_autores_inexistentes, stmts_adicionar_autores_a_livro, stmts_atualizar_livro
 
 
 router = APIRouter(prefix='/livros/fisico', tags=['Livro Físico'])
@@ -73,6 +73,8 @@ def ler_livro_fisico(
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_livro_fisico(livro_fisico: ExemplarFisicoSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
         autor_inexistente = buscar_autores_inexistentes(livro_fisico.autores)
         if autor_inexistente != -1:
@@ -102,20 +104,31 @@ def criar_livro_fisico(livro_fisico: ExemplarFisicoSchema):
                 detail='Essa estante já está lotada.'
             )
 
-        stmts = [stmt_criar_livro(livro_fisico)]
-        stmts.append((
-            'INSERT INTO exemplar_fisico (id_fisico, id_estante_associada) VALUES (%s, %s)',
-            (id, id_estante)
-        ))
-        stmts.extend(stmts_adicionar_autores_a_livro(id, livro_fisico.autores))
+        cursor_criar_livro(cursor, livro_fisico)
+        id_livro_fisico = cursor.lastrowid
 
-        return db_transaction(stmts)[0]
+        cursor.execute(
+            'INSERT INTO exemplar_fisico (id_fisico, id_estante_associada) VALUES (%s, %s)',
+            (id_livro_fisico, id_estante)
+        )
+        
+        for sql, params in stmts_adicionar_autores_a_livro(id_livro_fisico, livro_fisico.autores):
+            cursor.execute(sql, params)
+
+        conn.commit()
+
+        return id_livro_fisico
     except mysql_errors.IntegrityError:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="ISBN já cadastrado")
     except mysql_errors.Error as e:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @router.put('/{id_livro_fisico}', response_model=int)

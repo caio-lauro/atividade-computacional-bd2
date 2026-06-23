@@ -2,12 +2,12 @@ from difflib import get_close_matches
 from fastapi import HTTPException
 
 from schemas import PessoaSchema, LivroSchema, AtualizarLivroSchema
-from db import db_insert, db_fetch_all, db_fetch_one
+from db import db_fetch_all, db_fetch_one
 from auth import hash_senha
 
 
-def criar_pessoa(pessoa: PessoaSchema) -> int:
-    return db_insert(
+def cursor_criar_pessoa(cursor, pessoa: PessoaSchema):
+    cursor.execute(
         'INSERT INTO pessoas (nome, CPF, email, senha, telefone, data_nascimento) '
         'VALUES (%s, %s, %s, %s, %s, %s)',
         (pessoa.nome, pessoa.CPF.replace('-', '').replace('.', ''), pessoa.email,
@@ -15,8 +15,8 @@ def criar_pessoa(pessoa: PessoaSchema) -> int:
     )
 
 
-def stmt_criar_livro(livro: LivroSchema) -> tuple[str, tuple]:
-    return(
+def cursor_criar_livro(cursor, livro: LivroSchema):
+    cursor.execute(
         'INSERT INTO livros (ISBN, titulo, data_publicacao) '
         'VALUES (%s, %s, %s)',
         (livro.ISBN, livro.titulo, livro.data_publicacao)

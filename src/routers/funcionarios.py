@@ -3,10 +3,10 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from mysql.connector import errors as mysql_errors
 from typing import Annotated
 
-from db import db_fetch_one, db_fetch_all, db_insert, db_modify
+from db import db_fetch_one, db_fetch_all, db_modify, get_connection
 from schemas import FuncionarioSchema, CargoFuncionario, AtualizarFuncionarioSchema
 from db_schemas import FuncionarioDBSchema
-from utils import criar_pessoa, resolver_cargo
+from utils import cursor_criar_pessoa, resolver_cargo
 from auth import hash_senha
 
 
@@ -73,19 +73,29 @@ def ler_estantes_encarregadas(id_funcionario: int):
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_funcionario(funcionario: FuncionarioSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
         id_cargo = resolver_cargo(funcionario.cargo)
-        id = criar_pessoa(funcionario)
-        db_insert(
+        
+        cursor_criar_pessoa(cursor, funcionario)
+        id_funcionario = cursor.lastrowid
+
+        cursor.execute(
             'INSERT INTO funcionarios (id_funcionario, id_cargo, data_contratacao) '
             'VALUES (%s, %s, %s)',
-            (id, id_cargo, funcionario.data_contratacao)
+            (id_funcionario, id_cargo, funcionario.data_contratacao)
         )
-        return id
+
+        conn.commit()
+
+        return id_funcionario
     except mysql_errors.IntegrityError:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
     except mysql_errors.Error as e:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 

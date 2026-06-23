@@ -2,10 +2,10 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_insert, db_modify
+from db import db_fetch_one, db_fetch_all, db_modify, get_connection
 from schemas import UsuarioSchema, StatusUsuario, AtualizarUsuarioSchema
 from db_schemas import UsuarioDBSchema
-from utils import criar_pessoa
+from utils import cursor_criar_pessoa
 from auth import hash_senha
 
 
@@ -60,19 +60,31 @@ def ler_usuarios(
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_usuario(usuario: UsuarioSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
-        id = criar_pessoa(usuario)
-        db_insert(
+        cursor_criar_pessoa(cursor, usuario)
+        id_usuario = cursor.lastrowid
+
+        cursor.execute(
             'INSERT INTO usuarios (id_usuario) VALUES (%s)',
-            (id,)
+            (id_usuario,)
         )
-        return id
+
+        conn.commit()
+
+        return id_usuario
     except mysql_errors.IntegrityError:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="CPF ou email já cadastrado")
     except mysql_errors.Error as e:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @router.put('/{id_usuario}', response_model=int)
