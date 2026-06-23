@@ -12,6 +12,15 @@ class PessoaSchema(BaseModel):
     data_nascimento: date
 
 
+class _AtualizarPessoaSchema(BaseModel):
+    nome: str | None = None
+    CPF: str | None = None
+    email: EmailStr | None = None
+    senha: str | None = None
+    telefone: str | None = None
+    data_nascimento: date | None = None
+
+
 class UsuarioSchema(PessoaSchema):
     ...
 
@@ -21,13 +30,7 @@ class StatusUsuario(str, Enum):
     inativo = 'inativo'
 
 
-class AtualizarUsuarioSchema(BaseModel):
-    nome: str | None = None
-    CPF: str | None = None
-    email: EmailStr | None = None
-    senha: str | None = None
-    telefone: str | None = None
-    data_nascimento: date | None = None
+class AtualizarUsuarioSchema(_AtualizarPessoaSchema):
     status: StatusUsuario | None = None
     limite_emprestimos: int | None = None
 
@@ -37,13 +40,7 @@ class FuncionarioSchema(PessoaSchema):
     data_contratacao: date | None = None
 
 
-class AtualizarFuncionarioSchema(BaseModel):
-    nome: str | None = None
-    CPF: str | None = None
-    email: EmailStr | None = None
-    senha: str | None = None
-    telefone: str | None = None
-    data_nascimento: date | None = None
+class AtualizarFuncionarioSchema(_AtualizarPessoaSchema):
     cargo: int | str | None = None
     data_contratacao: date | None = None
 
