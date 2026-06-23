@@ -30,7 +30,8 @@ BEGIN
     FROM estantes e
     LEFT JOIN exemplar_fisico ef ON e.id = ef.id_estante_associada
     LEFT JOIN livros l ON ef.id_fisico = l.id
-    GROUP BY e.identificador_fisico, e.capacidade;
+    WHERE e.id=f_id_estante
+    GROUP BY e.id, e.identificador_fisico, e.capacidade;
     RETURN disponivel;
 END
 ---
