@@ -60,6 +60,17 @@ def ler_funcionarios(
     return fetch
 
 
+@router.get('/estantes', response_model=list[dict])
+def ler_estantes_encarregadas(id_funcionario: int):
+    return db_fetch_all(
+        'SELECT e.id, e.identificador_fisico FROM '
+        'estantes e INNER JOIN organizadores_estantes o '
+        'ON e.id=o.id_estante '
+        'WHERE o.id_funcionario = %s',
+        (id_funcionario,)
+    )
+
+
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_funcionario(funcionario: FuncionarioSchema):
     try:
