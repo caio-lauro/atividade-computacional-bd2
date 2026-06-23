@@ -4,5 +4,5 @@ def log_info(*args):
 
 
 def log_error(*args):
-    ERROR = "    \033[48;2;197;15;52m ERROR \033[0m "
+    ERROR = "     \033[48;2;197;15;52m ERRO \033[0m "
     print(ERROR, *args)
