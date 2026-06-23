@@ -2,6 +2,8 @@ import mysql
 from mysql.connector import pooling
 from settings import Settings
 from log import *
+from fastapi import HTTPException
+from mysql.connector import errors as mysql_errors
 
 settings = Settings()
 
@@ -132,6 +134,32 @@ def _db_execute(sql, params, is_insert) -> int:
         cursor.execute(sql, params)
         conn.commit()
         return cursor.lastrowid if is_insert else cursor.rowcount
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def db_transaction(stmts: list[tuple[str, tuple]]) -> list[int]:
+    """
+    Função interna para realizar múltiplas instruções. \
+    Usa internamente transações para reverter em caso de erro.
+
+    Retorna lastrowid para insert e rowcount, caso contrário.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        results = []
+        for stmt, params in stmts:
+            cursor.execute(stmt, params)
+            results.append(cursor.lastrowid or cursor.rowcount)
+        conn.commit()
+        return results
+    except mysql_errors.Error as e:
+        conn.rollback()
+        log_error(f'Erro no SQL: {stmt}')
+        log_error(f'Erro: {e}')
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conn.close()
