@@ -69,3 +69,17 @@ BEGIN
     GROUP BY e.identificador_fisico, e.capacidade;
 END
 ---
+
+-- Procedure que mostra o nome dos usuários que têm empréstimos atrasados
+---
+CREATE PROCEDURE IF NOT EXISTS sp_emprestimo_atrasado()
+BEGIN
+    SELECT
+        vu.nome as "Nome usuário",
+        e.data_emprestimo as "Data empréstimo",
+        e.data_devolucao as "Data devolução esperada",
+        DATEDIFF(CURDATE(), e.data_devolucao) as "Tempo de atraso"
+    FROM view_usuario vu
+    INNER JOIN emprestimos e ON u.id_usuario = e.id_usuario;
+END 
+---
