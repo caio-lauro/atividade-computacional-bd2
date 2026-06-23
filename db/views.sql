@@ -48,3 +48,15 @@ CREATE OR REPLACE VIEW view_digital AS
     d.numero_acessos, d.URL
     FROM view_livro l INNER JOIN exemplar_digital d
     ON l.id=d.id_digital;
+
+
+-- View que contém todas as informações de uma dada estante
+
+CREATE OR REPLACE VIEW view_estantes AS
+    SELECT e.id, e.identificador_fisico, e.capacidade, 
+    GROUP_CONCAT(p.nome ORDER BY p.nome SEPARATOR ', ') AS responsaveis
+    FROM estantes e INNER JOIN organizadores_estantes o
+    ON e.id=o.id_estante
+    INNER JOIN pessoas p
+    ON o.id_funcionario=p.id
+    GROUP BY e.id, e.identificador_fisico, e.capacidade;
