@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
 -- Especialização de Livro: Exemplar Digital
 CREATE TABLE IF NOT EXISTS exemplar_digital (
     id_digital INT NOT NULL,
-    numero_acessos INT NOT NULL,
+    numero_acessos INT NOT NULL DEFAULT 0,
     URL VARCHAR(768) NOT NULL UNIQUE,
     PRIMARY KEY (id_digital),
     FOREIGN KEY (id_digital) REFERENCES livros(id)
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS exemplar_digital (
 -- Especialização de Livro: Exemplar Físico
 CREATE TABLE IF NOT EXISTS exemplar_fisico (
     id_fisico INT NOT NULL,
-    disponivel BOOLEAN NOT NULL,
+    disponivel BOOLEAN NOT NULL DEFAULT TRUE,
     id_estante_associada INT NOT NULL,
     PRIMARY KEY (id_fisico),
     FOREIGN KEY (id_fisico) REFERENCES livros(id),
