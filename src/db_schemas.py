@@ -1,6 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, EmailStr
-from schemas import EstanteSchema
+from schemas import EstanteSchema, AutorSchema
 
 
 class _PessoaDBSchema(BaseModel):
@@ -43,3 +43,6 @@ class ExemplarFisicoDBSchema(_LivroDBSchema):
     disponivel: bool
     Estante: str
 
+
+class AutorDBSchema(AutorSchema):
+    id: int

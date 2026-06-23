@@ -13,10 +13,11 @@ async def lifespan(app: FastAPI):
     log_info('Inicializando conexão com o banco de dados.')
     init_connection_pool()
 
-    from routers import usuarios, funcionarios, estantes, exemplar_fisico
+    from routers import usuarios, funcionarios, estantes, exemplar_fisico, autores
 
     app.include_router(usuarios.router)
     app.include_router(funcionarios.router)
+    app.include_router(autores.router)
     app.include_router(estantes.router)
     app.include_router(exemplar_fisico.router)
 

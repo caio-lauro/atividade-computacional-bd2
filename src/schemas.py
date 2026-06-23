@@ -100,3 +100,13 @@ class StatusExemplarFisico(str, Enum):
 class AtualizarExemplarFisicoSchema(_AtualizarLivroSchema):
     status: StatusExemplarFisico | None = None
     estante: str | None = None
+
+
+class AutorSchema(BaseModel):
+    nome: str
+    nacionalidade: str
+
+
+class AtualizarAutorSchema(BaseModel):
+    nome: str | None = None
+    nacionalidade: str | None = None
