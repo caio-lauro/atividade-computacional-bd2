@@ -1,6 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, EmailStr
-from schemas import EstanteSchema, AutorSchema
+from schemas import AutorSchema
 
 
 class _PessoaDBSchema(BaseModel):
@@ -22,8 +22,11 @@ class FuncionarioDBSchema(_PessoaDBSchema):
     data_contratacao: date
 
 
-class EstanteDBSchema(EstanteSchema):
+class EstanteDBSchema(BaseModel):
     id: int
+    identificador_fisico: str
+    capacidade: int
+    responsaveis: list[str]
 
 
 class _LivroDBSchema(BaseModel):

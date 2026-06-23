@@ -57,11 +57,13 @@ CargoFuncionario = criar_enum_cargos()
 class EstanteSchema(BaseModel):
     identificador_fisico: str
     capacidade: int
+    funcionarios_responsaveis: list[int] = Field(min_length=1)
 
 
 class AtualizarEstanteSchema(BaseModel):
     identificador_fisico: str | None = None
     capacidade: int | None = None
+    funcionarios_responsaveis: list[int] = []
 
 
 class LivroSchema(BaseModel):
