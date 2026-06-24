@@ -154,7 +154,7 @@ def atualizar_funcionario(
     return sum(db_transaction(stmts))
 
 
-@router.delete('/funcinario/{id_funcionario}', response_model=int)
+@router.delete('/{id_funcionario}', response_model=int)
 def deletar_funcionario(id_funcionario: int):
     # Buscar pessoa e funcionário para ver se existe
     if db_fetch_one('SELECT id FROM pessoas WHERE id = %s', (id_funcionario,)) is None \
