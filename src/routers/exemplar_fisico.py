@@ -99,6 +99,7 @@ def criar_livro_fisico(livro_fisico: ExemplarFisicoSchema):
         )['espacos']
 
         if espacos == 0:
+            conn.rollback()
             raise HTTPException(
                 HTTPStatus.CONFLICT,
                 detail='Essa estante já está lotada.'
