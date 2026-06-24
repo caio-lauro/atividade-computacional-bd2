@@ -112,3 +112,13 @@ class AutorSchema(BaseModel):
 class AtualizarAutorSchema(BaseModel):
     nome: str | None = None
     nacionalidade: str | None = None
+
+
+class EmprestimoSchema(BaseModel):
+    id_usuario: NonNegativeInt
+    id_livro_fisico: NonNegativeInt
+
+
+class AtualizarEmprestimoSchema(BaseModel):
+    data_devolucao: date | None = None
+    devolvido: bool | None = None

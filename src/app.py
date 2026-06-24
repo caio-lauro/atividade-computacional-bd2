@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     log_info('Inicializando conexão com o banco de dados.')
     init_connection_pool()
 
-    from routers import usuarios, funcionarios, autores, estantes, exemplar_fisico, exemplar_digital
+    from routers import usuarios, funcionarios, autores, estantes, exemplar_fisico, exemplar_digital, emprestimos
 
     app.include_router(usuarios.router)
     app.include_router(funcionarios.router)
@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI):
     app.include_router(estantes.router)
     app.include_router(exemplar_fisico.router)
     app.include_router(exemplar_digital.router)
+    app.include_router(emprestimos.router)
 
     # App recebe requests
     yield

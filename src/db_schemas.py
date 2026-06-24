@@ -49,3 +49,11 @@ class ExemplarFisicoDBSchema(_LivroDBSchema):
 
 class AutorDBSchema(AutorSchema):
     id: int
+
+
+class EmprestimoDBSchema(BaseModel):
+    usuario: str
+    titulo_livro: str
+    data_emprestimo: date
+    data_devolucao: date
+    devolvido: bool
