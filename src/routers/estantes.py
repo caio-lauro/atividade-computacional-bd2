@@ -146,6 +146,22 @@ def deletar_estante(id_estante: int):
             HTTPStatus.NOT_FOUND,
             'Nenhuma estante com esse ID foi encontrada.'
         )
+    
+    # Buscar livros que estejam na estante
+    livros = db_fetch_all(
+        'SELECT id_fisico FROM exemplar_fisico WHERE id_estante_associada = %s',
+        (id_estante,)
+    )
+
+    if livros:
+        info = db_fetch_all(
+            'SELECT id, titulo FROM view_fisico WHERE id IN (%s)', 
+            (','.join([str(d['id_fisico']) for d in livros]),)
+        )
+        raise HTTPException(
+            HTTPStatus.CONFLICT,
+            f'Impossível remover estante, ainda existem livros associados a ela. Livros: {info}'
+        )
 
     return sum(
         db_transaction([
