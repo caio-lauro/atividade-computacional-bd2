@@ -127,7 +127,7 @@ def atualizar_funcionario(
             'Nenhum funcionário com esse ID foi encontrado.'
         )
 
-    stmts = [stmt_atualizar_pessoa(id_funcionario, funcionario)]
+    stmts = stmt_atualizar_pessoa(id_funcionario, funcionario)
 
     fields = []
     params = []

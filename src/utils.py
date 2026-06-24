@@ -44,7 +44,7 @@ def stmts_adicionar_autores_a_livro(id_livro: int, autores: list[int]) -> list[t
     return stmts
 
 
-def stmt_atualizar_pessoa(id_pessoa: int, pessoa: AtualizarPessoaSchema) -> tuple[str, tuple]:
+def stmt_atualizar_pessoa(id_pessoa: int, pessoa: AtualizarPessoaSchema) -> list[tuple[str, tuple]]:
     fields = []
     params = []
 

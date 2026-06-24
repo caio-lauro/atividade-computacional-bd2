@@ -103,7 +103,7 @@ def atualizar_usuario(
             'Nenhum usuário com esse ID foi encontrado.'
         )
 
-    stmts = [stmt_atualizar_pessoa(id_usuario, usuario)]
+    stmts = stmt_atualizar_pessoa(id_usuario, usuario)
 
     fields = []
     params = []
