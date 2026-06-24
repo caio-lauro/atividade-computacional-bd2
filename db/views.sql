@@ -23,9 +23,9 @@ CREATE OR REPLACE VIEW view_livro AS
     SELECT l.id, l.ISBN, l.titulo, l.data_publicacao,
     GROUP_CONCAT(a.nome ORDER BY a.nome SEPARATOR ', ') AS autores
     FROM livros l 
-    INNER JOIN autores_livros al
+    LEFT JOIN autores_livros al
     ON l.id=al.id_livro
-    INNER JOIN autores a
+    LEFT JOIN autores a
     ON a.id=al.id_autor
     GROUP BY l.id, l.ISBN, l.titulo, l.data_publicacao;
 
@@ -35,9 +35,9 @@ CREATE OR REPLACE VIEW view_livro AS
 CREATE OR REPLACE VIEW view_fisico AS
     SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, l.autores,
     f.disponivel, e.identificador_fisico Estante
-    FROM view_livro l INNER JOIN exemplar_fisico f
+    FROM view_livro l LEFT JOIN exemplar_fisico f
     ON l.id=f.id_fisico 
-    INNER JOIN estantes e
+    LEFT JOIN estantes e
     ON f.id_estante_associada=e.id;
 
 
@@ -46,7 +46,7 @@ CREATE OR REPLACE VIEW view_fisico AS
 CREATE OR REPLACE VIEW view_digital AS
     SELECT l.id, l.ISBN, l.titulo, l.data_publicacao, l.autores,
     d.numero_acessos, d.URL
-    FROM view_livro l INNER JOIN exemplar_digital d
+    FROM view_livro l LEFT JOIN exemplar_digital d
     ON l.id=d.id_digital;
 
 
@@ -55,9 +55,9 @@ CREATE OR REPLACE VIEW view_digital AS
 CREATE OR REPLACE VIEW view_estantes AS
     SELECT e.id, e.identificador_fisico, e.capacidade, 
     GROUP_CONCAT(p.nome ORDER BY p.nome SEPARATOR ', ') AS responsaveis
-    FROM estantes e INNER JOIN organizadores_estantes o
+    FROM estantes e LEFT JOIN organizadores_estantes o
     ON e.id=o.id_estante
-    INNER JOIN pessoas p
+    LEFT JOIN pessoas p
     ON o.id_funcionario=p.id
     GROUP BY e.id, e.identificador_fisico, e.capacidade;
 
@@ -66,7 +66,7 @@ CREATE OR REPLACE VIEW view_estantes AS
 
 CREATE OR REPLACE VIEW view_emprestimo AS
     SELECT e.id, p.nome usuario, l.titulo titulo_livro, e.data_emprestimo, e.data_devolucao, e.devolvido
-    FROM emprestimos e INNER JOIN pessoas p
+    FROM emprestimos e LEFT JOIN pessoas p
     ON e.id_usuario=p.id
-    INNER JOIN livros l
+    LEFT JOIN livros l
     ON e.id_fisico=l.id;
