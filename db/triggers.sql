@@ -53,6 +53,9 @@ BEGIN
 END
 ---
 
+
+-- Triggers de conteúdo
+
 -- Trigger de emprestimo
 ---
 CREATE TRIGGER IF NOT EXISTS tg_emprestimo
@@ -84,5 +87,19 @@ BEGIN
 
     SET NEW.data_emprestimo = CURDATE();
     SET NEW.data_devolucao = DATE_ADD(CURDATE(), INTERVAL 20 DAY);
+END
+---
+
+-- Trigger de devolução do empréstimo
+---
+CREATE TRIGGER IF NOT EXISTS tg_devolucao
+AFTER UPDATE ON emprestimos
+FOR EACH ROW
+BEGIN
+    IF NEW.devolvido = TRUE THEN
+        UPDATE exemplar_fisico SET disponivel = TRUE WHERE id_fisico = NEW.id_fisico;
+    ELSE
+        UPDATE exemplar_fisico SET disponivel = FALSE WHERE id_fisico = NEW.id_fisico;  
+    END IF;
 END
 ---
