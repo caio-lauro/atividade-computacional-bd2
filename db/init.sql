@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS exemplar_fisico (
 );
 
 -- ===========================
--- Tabelas de Entidades Fracas
+--     Tabelas de Relações
 -- ===========================
 
 -- Relação Escrever
@@ -102,11 +102,13 @@ CREATE TABLE IF NOT EXISTS autores_livros (
 
 -- Relação Emprestar
 CREATE TABLE IF NOT EXISTS emprestimos (
+    id INT AUTO_INCREMENT NOT NULL,
     id_usuario INT NOT NULL,
     id_fisico INT NOT NULL,
     data_emprestimo DATE NOT NULL,
     data_devolucao DATE NOT NULL,
     devolvido BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id),
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
     FOREIGN KEY (id_fisico) REFERENCES exemplar_fisico(id_fisico)
 );
