@@ -102,7 +102,7 @@ def deletar_autor(id_autor: int):
             'Nenhum autor com esse ID foi encontrada.'
         )
     
-    return sum(db_transaction(
+    return sum(db_transaction([
         ('DELETE FROM autores_livros WHERE id_autor = %s', (id_autor,)),
         ('DELETE FROM autores WHERE id = %s', (id_autor,))
-    ))
+    ]))
