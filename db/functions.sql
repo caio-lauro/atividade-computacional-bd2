@@ -15,7 +15,7 @@ CREATE FUNCTION IF NOT EXISTS fn_conta_emprestimos_ativos(f_id_usuario INT) RETU
 DETERMINISTIC
 BEGIN
     DECLARE cont_ativos INT;
-    SELECT COUNT(*) INTO cont_ativos FROM empresitmos WHERE f_id_usuario = id_usuario AND devolvido = FALSE;
+    SELECT COUNT(*) INTO cont_ativos FROM emprestimos WHERE f_id_usuario = id_usuario AND devolvido = FALSE;
     RETURN cont_ativos;
 END 
 ---
