@@ -25,24 +25,24 @@ def ler_funcionarios(
     params = []
 
     if id_funcionario:
-        conditions.routerend('id = %s')
-        params.routerend(id_funcionario)
+        conditions.append('id = %s')
+        params.append(id_funcionario)
 
     if nome:
-        conditions.routerend('nome LIKE %s')
-        params.routerend(f'%{nome}%')
+        conditions.append('nome LIKE %s')
+        params.append(f'%{nome}%')
 
     if CPF:
-        conditions.routerend('CPF = %s')
-        params.routerend(CPF.replace('-', '').replace('.', ''))
+        conditions.append('CPF = %s')
+        params.append(CPF.replace('-', '').replace('.', ''))
 
     if email:
-        conditions.routerend('email = %s')
-        params.routerend(email)
+        conditions.append('email = %s')
+        params.append(email)
 
     if cargo:
-        conditions.routerend('cargo = %s')
-        params.routerend(cargo)
+        conditions.append('cargo = %s')
+        params.append(cargo)
 
     where = '' if not conditions else 'WHERE ' + ' AND '.join(conditions)
     fetch = db_fetch_all(
