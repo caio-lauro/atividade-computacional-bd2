@@ -2,7 +2,7 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_insert, db_modify
+from db import db_fetch_one, db_fetch_all, db_insert, db_modify, db_transaction
 from schemas import AutorSchema, AtualizarAutorSchema
 from db_schemas import AutorDBSchema
 
@@ -102,14 +102,7 @@ def deletar_autor(id_autor: int):
             'Nenhum autor com esse ID foi encontrada.'
         )
     
-    rows = db_modify(
-        'DELETE FROM autores_livros WHERE id_autor = %s',
-        (id_autor,)
-    )
-
-    rows += db_modify(
-        'DELETE FROM autores WHERE id = %s',
-        (id_autor,)
-    )
-
-    return rows
+    return sum(db_transaction(
+        ('DELETE FROM autores_livros WHERE id_autor = %s', (id_autor,)),
+        ('DELETE FROM autores WHERE id = %s', (id_autor,))
+    ))

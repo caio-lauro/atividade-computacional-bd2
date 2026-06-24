@@ -143,6 +143,7 @@ def deletar_usuario(id_usuario: int):
         )
 
     return sum(db_transaction([
+        ('DELETE FROM emprestimos WHERE id_usuario = %s', (id_usuario,)),
         ('DELETE FROM usuarios WHERE id_usuario = %s', (id_usuario,)),
         ('DELETE FROM pessoas WHERE id = %s', (id_usuario,))
     ]))

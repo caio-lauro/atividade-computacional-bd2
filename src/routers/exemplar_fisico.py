@@ -195,6 +195,7 @@ def deletar_livro_fisico(id_livro_fisico: int):
         )
 
     return sum(db_transaction([
+        ('DELETE FROM emprestimos WHERE id_fisico = %s', (id_livro_fisico,)),
         ('DELETE FROM exemplar_fisico WHERE id_fisico = %s', (id_livro_fisico,)),
         ('DELETE FROM autores_livros WHERE id_livro = %s', (id_livro_fisico,)),
         ('DELETE FROM livros WHERE id = %s', (id_livro_fisico,))

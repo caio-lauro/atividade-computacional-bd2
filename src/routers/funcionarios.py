@@ -168,6 +168,7 @@ def deletar_funcionario(id_funcionario: int):
         )
     
     return sum(db_transaction([
+        ('DELETE FROM organizadores_estantes WHERE id_funcionario = %s', (id_funcionario,)),
         ('DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)),
         ('DELETE FROM pessoas WHERE id = %s', (id_funcionario,))
     ]))
