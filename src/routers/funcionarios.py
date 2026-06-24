@@ -167,6 +167,18 @@ def deletar_funcionario(id_funcionario: int):
             'Nenhum funcionário com esse ID foi encontrado.'
         )
     
+    estantes = db_fetch_all(
+        'SELECT id_estante FROM organizadores_estantes WHERE id_funcionario = %s',
+        (id_funcionario,)
+    )
+
+    if estantes:
+        raise HTTPException(
+            HTTPStatus.CONFLICT,
+            f'Ainda existem estantes pendentes para esse funcionário: {estantes}'
+        )
+    
+    
     return sum(db_transaction([
         ('DELETE FROM organizadores_estantes WHERE id_funcionario = %s', (id_funcionario,)),
         ('DELETE FROM funcionarios WHERE id_funcionario = %s', (id_funcionario,)),

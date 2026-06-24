@@ -102,6 +102,18 @@ def deletar_autor(id_autor: int):
             'Nenhum autor com esse ID foi encontrada.'
         )
     
+    # Buscar livros escritos pelo autor
+    livros = db_fetch_all(
+        'SELECT id_livro FROM autores_livros WHERE id_autor = %s',
+        (id_autor,)
+    )
+
+    if livros:
+        raise HTTPException(
+            HTTPStatus.CONFLICT,
+            f'Ainda existem livros escritos por esse autor: {livros}'
+        )
+    
     return sum(db_transaction([
         ('DELETE FROM autores_livros WHERE id_autor = %s', (id_autor,)),
         ('DELETE FROM autores WHERE id = %s', (id_autor,))

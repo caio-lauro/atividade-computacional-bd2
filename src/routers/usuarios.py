@@ -141,7 +141,19 @@ def deletar_usuario(id_usuario: int):
             HTTPStatus.NOT_FOUND,
             'Nenhum usuário com esse ID foi encontrado.'
         )
+    
+    # Verifica se o usuário ainda tem empréstimos ativos antes de remover
+    emprestimos = db_fetch_all(
+        'SELECT id FROM emprestimos WHERE id_usuario = %s AND devolvido = 0',
+        (id_usuario,)
+    )
 
+    if emprestimos:
+        raise HTTPException(
+            HTTPStatus.CONFLICT,
+            f'Ainda existem empréstimos pendentes para esse usuário: {emprestimos}'
+        )
+    
     return sum(db_transaction([
         ('DELETE FROM emprestimos WHERE id_usuario = %s', (id_usuario,)),
         ('DELETE FROM usuarios WHERE id_usuario = %s', (id_usuario,)),
