@@ -60,3 +60,13 @@ CREATE OR REPLACE VIEW view_estantes AS
     INNER JOIN pessoas p
     ON o.id_funcionario=p.id
     GROUP BY e.id, e.identificador_fisico, e.capacidade;
+
+
+-- View que contém todas as informações de um dado empréstimo
+
+CREATE OR REPLACE VIEW view_emprestimo AS
+    SELECT e.id, p.nome usuario, l.titulo titulo_livro, e.data_emprestimo, e.data_devolucao, e.devolvido
+    FROM emprestimos e INNER JOIN pessoas p
+    ON e.id_usuario=p.id
+    INNER JOIN livros l
+    ON e.id_fisico=l.id;
