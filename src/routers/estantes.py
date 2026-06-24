@@ -2,7 +2,7 @@ from http import HTTPStatus
 from fastapi import APIRouter, HTTPException, Response
 from mysql.connector import errors as mysql_errors
 
-from db import db_fetch_one, db_fetch_all, db_insert, db_transaction
+from db import db_fetch_one, db_fetch_all, db_transaction, get_connection
 from schemas import EstanteSchema, AtualizarEstanteSchema
 from db_schemas import EstanteDBSchema
 
@@ -52,27 +52,38 @@ def ler_estantes(
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=int)
 def criar_estantes(estante: EstanteSchema):
+    conn = get_connection()
+    cursor = conn.cursor()
     try:
-        id_estante = db_insert(
+        cursor.execute(
             'INSERT INTO estantes (identificador_fisico, capacidade) '
             'VALUES (%s, %s)',
             (estante.identificador_fisico, estante.capacidade)
         )
 
+        id_estante = cursor.lastrowid
+
         for id_funcionario in estante.funcionarios_responsaveis:
-            db_insert(
+            cursor.execute(
                 'INSERT INTO organizadores_estantes (id_funcionario, id_estante) '
                 'VALUES (%s, %s)',
                 (id_funcionario, id_estante)
             )
 
+        conn.commit()
+
         return id_estante
     except mysql_errors.IntegrityError:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT, detail="Identificador físico já cadastrado")
     except mysql_errors.Error as e:
+        conn.rollback()
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @router.put('/{id_estante}', response_model=int)
